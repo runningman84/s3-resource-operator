@@ -1,0 +1,4 @@
+kubernetes
+boto3
+requests
+botocore
