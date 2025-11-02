@@ -17,18 +17,18 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: main
           fetch-depth: 0
 
       - name: Debug branch info
         run: |
           echo "Current branch: $(git branch --show-current)"
-          echo "workflow_run.head_branch: ${{ github.event.workflow_run.head_branch }}"
+          echo "Current HEAD: $(git rev-parse HEAD)"
           echo "GITHUB_REF: $GITHUB_REF"
 
       - name: Setup Node.js
@@ -45,7 +45,8 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REF: refs/heads/${{ github.event.workflow_run.head_branch }}
         run: |
-          echo "Running semantic-release on branch: ${{ github.event.workflow_run.head_branch }}"
+          # Ensure we're on main branch for semantic-release
+          git checkout main
+          echo "Running semantic-release on branch: $(git branch --show-current)"
           npx semantic-release
