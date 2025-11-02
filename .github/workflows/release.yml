@@ -30,6 +30,9 @@ jobs:
           echo "Current branch: $(git branch --show-current)"
           echo "Current HEAD: $(git rev-parse HEAD)"
           echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
+          echo "GITHUB_BASE_REF: $GITHUB_BASE_REF"
+          echo "workflow_run.head_branch: ${{ github.event.workflow_run.head_branch }}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,8 +48,13 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REF: refs/heads/main
+          GITHUB_HEAD_REF: ""
         run: |
           # Ensure we're on main branch for semantic-release
           git checkout main
+          # Set the branch explicitly for semantic-release
+          export BRANCH_NAME=main
           echo "Running semantic-release on branch: $(git branch --show-current)"
+          echo "GITHUB_REF is now: $GITHUB_REF"
           npx semantic-release
