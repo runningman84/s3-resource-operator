@@ -1,0 +1,18 @@
+# 1.0.0 (2025-11-02)
+
+
+### Bug Fixes
+
+* gitcommit msg ([d977649](https://github.com/runningman84/s3-resource-operator/commit/d977649bb446e46b62dbe3d4651ae7f83b65a2b3))
+* improve release job ([6035952](https://github.com/runningman84/s3-resource-operator/commit/60359523bfc9f7e0efd1669c5a01f8ab64579f28))
+* nextRelease detection ([41a5918](https://github.com/runningman84/s3-resource-operator/commit/41a59185711298c791a295231e3e6d2f15ec9076))
+* release process ([26fa03d](https://github.com/runningman84/s3-resource-operator/commit/26fa03daa49b4d3542d7330fa7a9807ae8bfe227))
+* release process ([c2b284d](https://github.com/runningman84/s3-resource-operator/commit/c2b284d7a84aace75a969cc1f98b2a842e2322f5))
+* simple approach ([7f3fbeb](https://github.com/runningman84/s3-resource-operator/commit/7f3fbebaacab4df222a285dc56f54567574b2690))
+
+
+### Features
+
+* improve commit messages ([b268000](https://github.com/runningman84/s3-resource-operator/commit/b2680005672d69620af8460816a7ba64aa880eb8))
+* improve gh actions ([726d73b](https://github.com/runningman84/s3-resource-operator/commit/726d73bd1c9f214d70f883195bd08a4cbc75ca65))
+* improve vscode ([6346337](https://github.com/runningman84/s3-resource-operator/commit/634633743a860e8f2e887ba6763b5cdff5a1634d))
