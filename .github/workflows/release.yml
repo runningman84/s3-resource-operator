@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
           tags: local/s3-resource-operator:latest
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     steps:
       - name: Checkout repository
@@ -61,7 +61,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install yq
         run: sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
@@ -70,6 +70,40 @@ jobs:
         run: npm install
 
       - name: Run semantic-release
+        id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          npx semantic-release --debug 2>&1 | tee semantic-release.log
+
+          # Check if a release was created
+          if grep -q "Published GitHub release" semantic-release.log; then
+            echo "release_created=true" >> $GITHUB_OUTPUT
+            # Extract version from log
+            VERSION=$(grep "Published GitHub release" semantic-release.log | grep -oP 'v\d+\.\d+\.\d+' | head -1)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "✅ Release $VERSION created successfully"
+          else
+            echo "release_created=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No release created (no releasable commits)"
+          fi
+
+      - name: Trigger publish workflow
+        if: steps.semantic-release.outputs.release_created == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.semantic-release.outputs.version }}';
+            console.log(`Triggering publish workflow for ${version}`);
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish.yml',
+              ref: 'main',
+              inputs: {
+                tag: version
+              }
+            });
+
+            console.log('✅ Publish workflow triggered successfully');

@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04
             platform: linux/amd64
             arch: amd64
           - runner: ubuntu-24.04-arm64
@@ -93,7 +93,7 @@ jobs:
           retention-days: 1
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-multiarch
     steps:
       - name: Determine tag
