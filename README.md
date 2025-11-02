@@ -1,5 +1,7 @@
 # S3 Resource Operator
 
+[![Test](https://github.com/runningman84/s3-resource-operator/actions/workflows/test.yml/badge.svg)](https://github.com/runningman84/s3-resource-operator/actions/workflows/test.yml)
+[![Release](https://github.com/runningman84/s3-resource-operator/actions/workflows/release.yml/badge.svg)](https://github.com/runningman84/s3-resource-operator/actions/workflows/release.yml)
 [![Build and Publish](https://github.com/runningman84/s3-resource-operator/actions/workflows/publish.yml/badge.svg)](https://github.com/runningman84/s3-resource-operator/actions/workflows/publish.yml)
 
 A Kubernetes operator to manage S3 buckets and IAM users for S3-compatible object stores like VersityGW, MinIO, and Garage, declaratively using Kubernetes secrets.
@@ -25,6 +27,8 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 - **Prometheus Metrics**: Exposes metrics on port 8000 for monitoring (secrets processed, errors, sync duration).
 - **Configurable**: All settings, including S3 endpoint and credentials, are configurable via environment variables.
 - **Helm Chart**: Comes with a Helm chart for easy deployment via OCI registry.
+- **Multi-Architecture Support**: Docker images built for both AMD64 and ARM64 architectures (including Apple Silicon, AWS Graviton).
+- **Automated Releases**: Semantic versioning and automated releases using Conventional Commits.
 
 ## Prerequisites
 
@@ -165,16 +169,111 @@ To run the operator locally for development, you need Python 3.12+ and the requi
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and deployment. The workflows handle:
-- **Testing**: Runs tests on every push and pull request (`.github/workflows/test.yml`)
-- **Release**: Creates semantic releases and tags when code is merged to main (`.github/workflows/release.yml`)
-- **Publishing**: Builds and publishes Docker images and Helm charts to GHCR when tags are created (`.github/workflows/publish.yml`)
+This project uses GitHub Actions for continuous integration and deployment with a fully automated release pipeline:
 
-### Release Flow
-1. Code is merged to `main` branch
-2. Semantic-release creates a new version tag
-3. Docker image is built and pushed to `ghcr.io/runningman84/s3-resource-operator`
-4. Helm chart is packaged and pushed to `oci://ghcr.io/runningman84/s3-resource-operator`
+### Workflows
+
+1. **Test** (`.github/workflows/test.yml`)
+   - Runs on: Push to `develop` branch and all pull requests
+   - Executes: Python tests, Helm chart validation, Docker build verification
+   - Validates: Commit message format using commitlint
+
+2. **Release** (`.github/workflows/release.yml`)
+   - Runs on: Push to `main` branch
+   - Flow:
+     - Runs full test suite first
+     - Uses semantic-release to analyze commits
+     - Automatically determines version bump (major/minor/patch)
+     - Updates `CHANGELOG.md`, `helm/Chart.yaml`, and `helm/values.yaml`
+     - Creates git tag and GitHub release
+     - **Automatically triggers the Build and Publish workflow**
+   - Requirements: All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) format
+
+3. **Build and Publish** (`.github/workflows/publish.yml`)
+   - Triggered by: Release workflow (automatically) or manual dispatch
+   - Builds:
+     - **Multi-architecture Docker images** using native runners:
+       - `linux/amd64` - Built on native x86_64 runners
+       - `linux/arm64` - Built on native ARM64 runners (fast, no emulation!)
+     - Publishes to: `ghcr.io/runningman84/s3-resource-operator`
+     - Tags: `latest`, `1.0.1`, `1.0`, `1`
+   - **Helm chart** package and publish to OCI registry
+     - Publishes to: `oci://ghcr.io/runningman84/s3-resource-operator`
+
+### Multi-Architecture Images
+
+Docker images are built natively for both AMD64 and ARM64 architectures without using slow QEMU emulation. This means:
+- ✅ **Fast builds** - Native compilation on each architecture (~3x faster than QEMU)
+- ✅ **Apple Silicon** - Run natively on M1/M2/M3 Macs
+- ✅ **AWS Graviton** - Optimized for ARM-based cloud instances
+- ✅ **Intel/AMD** - Traditional x86_64 servers
+
+Docker automatically pulls the correct architecture for your platform:
+```bash
+# Works on any architecture
+docker pull ghcr.io/runningman84/s3-resource-operator:latest
+```
+
+### Release Process
+
+The release process is fully automated using semantic versioning:
+
+1. **Development**: Create PRs against `develop` branch
+   - All commits validated with commitlint
+   - Tests run automatically
+
+2. **Merge to Main**: When ready to release
+   ```bash
+   # Ensure your commits follow Conventional Commits format:
+   # feat: adds new feature (minor version bump)
+   # fix: bug fix (patch version bump)
+   # feat!: breaking change (major version bump)
+   git checkout main
+   git merge develop
+   git push
+   ```
+
+3. **Automatic Release & Publish**:
+   - Tests run first (if tests fail, no release)
+   - Semantic-release analyzes commit messages
+   - Version is determined automatically
+   - Changelog is generated
+   - Git tag and GitHub release created
+   - **Build and Publish workflow is automatically triggered**
+   - Multi-architecture Docker images built (AMD64 + ARM64)
+   - Helm chart packaged and published
+
+4. **Result**: New version available within minutes at:
+   - Docker: `ghcr.io/runningman84/s3-resource-operator:1.0.1`
+   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.0.1`
+
+### Complete Automation Flow
+
+```
+Developer Pushes to main
+         ↓
+   Release Workflow
+    ├─ Run Tests
+    ├─ Semantic Release
+    │   ├─ Determine Version
+    │   ├─ Update Files
+    │   ├─ Create Tag
+    │   └─ Create GitHub Release
+    └─ Trigger Publish Workflow
+         ↓
+   Build and Publish Workflow
+    ├─ Build AMD64 Image (native)
+    ├─ Build ARM64 Image (native)
+    ├─ Create Multi-Arch Manifest
+    ├─ Tag Images (version, major, latest)
+    └─ Package & Publish Helm Chart
+         ↓
+   🎉 Release Complete!
+```
+
+### Commit Message Validation
+
+All PRs are automatically validated to ensure commit messages follow the Conventional Commits format. The commitlint workflow will comment on PRs with guidance if validation fails.
 
 ## Configuration
 
