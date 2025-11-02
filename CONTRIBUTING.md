@@ -43,6 +43,9 @@ cd s3-resource-operator
 pip install -r requirements.txt
 pip install -r requirements-test.txt
 
+# Configure git commit message template (optional but recommended)
+git config commit.template .gitmessage
+
 # Run tests
 pytest -v
 
@@ -68,6 +71,13 @@ docs: update installation instructions
 test: add tests for graceful shutdown
 chore: update dependencies
 ```
+
+**Tip:** Configure the commit message template to get helpful reminders:
+```bash
+git config commit.template .gitmessage
+```
+
+This will pre-populate your commit messages with the proper format and guidelines.
 
 ### Testing
 
