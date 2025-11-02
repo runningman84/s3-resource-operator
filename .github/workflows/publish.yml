@@ -1,9 +1,8 @@
 name: Build and Publish
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 permissions:
   contents: write # Needed for creating releases and tags
@@ -15,6 +14,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Debug release info
+        run: |
+          echo "Release tag: ${{ github.event.release.tag_name }}"
+          echo "Release name: ${{ github.event.release.name }}"
+          echo "Release ref: ${{ github.ref }}"
 
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
