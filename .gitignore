@@ -1,6 +1,9 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 env/
 venv/
 .venv/
@@ -17,12 +20,18 @@ build/
 .cache/
 .pylint.d/
 .ruff_cache/
+pip-log.txt
+pip-delete-this-directory.txt
 
 # IDEs and editors
 .vscode/
 .idea/
 .ropeproject/
 *.swp
+*.swn
+*.swo
+*~
+*.bak
 
 # Node
 node_modules/
@@ -32,3 +41,12 @@ node_modules/
 
 # OS-specific
 .DS_Store
+
+# Logs and temporary files
+*.log
+*.tmp
+logs/
+
+# Kubernetes local config
+kubeconfig
+*.kubeconfig
