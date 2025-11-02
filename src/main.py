@@ -44,6 +44,11 @@ class MetricsServer:
                     self.send_header('Content-type', 'text/plain')
                     self.end_headers()
                     self.wfile.write(generate_latest())
+                elif self.path == '/healthz':
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(b'{"status":"healthy"}')
                 else:
                     self.send_response(404)
                     self.end_headers()

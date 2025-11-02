@@ -190,12 +190,25 @@ The operator can be configured using the following environment variables:
 
 ## Monitoring
 
-The operator exposes Prometheus metrics on port 8000 at the `/metrics` endpoint. The following metrics are available:
+The operator exposes Prometheus metrics and a health check endpoint on port 8000:
 
-- `s3_operator_secrets_processed_total`: Total number of secrets processed
-- `s3_operator_errors_total`: Total number of errors encountered
-- `s3_operator_sync_duration_seconds`: Duration of sync cycles (histogram)
-- `s3_operator_handle_secret_duration_seconds`: Duration of handling individual secrets (histogram)
+### Health Check
+- **Endpoint**: `/healthz`
+- **Purpose**: Kubernetes liveness and readiness probes
+- **Response**: `{"status":"healthy"}`
+
+```sh
+kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 8000:8000
+curl http://localhost:8000/healthz
+```
+
+### Metrics
+- **Endpoint**: `/metrics`
+- **Available Metrics**:
+  - `s3_operator_secrets_processed_total`: Total number of secrets processed
+  - `s3_operator_errors_total`: Total number of errors encountered
+  - `s3_operator_sync_duration_seconds`: Duration of sync cycles (histogram)
+  - `s3_operator_handle_secret_duration_seconds`: Duration of handling individual secrets (histogram)
 
 To access metrics:
 ```sh
@@ -203,9 +216,22 @@ kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 800
 curl http://localhost:8000/metrics
 ```
 
+### Prometheus Operator
+If you're using the Prometheus Operator, you can enable automatic service discovery by setting `serviceMonitor.enabled=true` in your Helm values:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  interval: 30s
+```
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a pull request.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our development process, coding standards, and how to submit pull requests.
+
+- **[Contributing Guide](CONTRIBUTING.md)** - Development setup and contribution guidelines
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community standards and expectations
+- **[Security Policy](SECURITY.md)** - How to report security vulnerabilities
 
 This project uses [Renovate](https://github.com/renovatebot/renovate) to keep dependencies up-to-date. Renovate will automatically create pull requests for outdated dependencies.
 
