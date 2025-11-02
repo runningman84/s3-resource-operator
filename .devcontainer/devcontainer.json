@@ -11,7 +11,8 @@
 			"version": "latest",
 			"helm": "latest",
 			"minikube": "latest"
-		}
+		},
+		"ghcr.io/devcontainers/features/aws-cli:1": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -33,6 +34,6 @@
 	// "remoteUser": "root"
 
 	"mounts": [
-    	"source=/home/phil/.kube/config,target=/home/vscode/.kube/config,type=bind"
+    	"source=${localEnv:HOME}/.kube/config,target=/home/vscode/.kube/config,type=bind"
 	]
 }
