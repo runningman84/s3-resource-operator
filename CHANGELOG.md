@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/runningman84/s3-resource-operator/compare/v1.0.1...v1.0.2) (2025-11-02)
+
+
+### Bug Fixes
+
+* improve publish ([1a7f2f7](https://github.com/runningman84/s3-resource-operator/commit/1a7f2f7a4ef6f9aec7e14cb1afb0b26a7488fbfe))
+
 ## [1.0.1](https://github.com/runningman84/s3-resource-operator/compare/v1.0.0...v1.0.1) (2025-11-02)
 
 
