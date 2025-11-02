@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/runningman84/s3-resource-operator/compare/v1.0.2...v1.0.3) (2025-11-02)
+
+
+### Bug Fixes
+
+* multi arch ([5293d57](https://github.com/runningman84/s3-resource-operator/commit/5293d57dc52b58f2df3451427cd936f06e02c9e0))
+
 ## [1.0.2](https://github.com/runningman84/s3-resource-operator/compare/v1.0.1...v1.0.2) (2025-11-02)
 
 
