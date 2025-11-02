@@ -1,0 +1,19 @@
+{
+    "git.inputValidationLength": 72,
+    "git.inputValidationSubjectLength": 72,
+    "git.branchValidationRegex": "^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)/.*$",
+    "git.useCommitInputAsStashMessage": true,
+    "[git-commit]": {
+        "editor.rulers": [
+            72
+        ],
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 72
+    },
+    "python.analysis.typeCheckingMode": "basic",
+    "python.linting.enabled": true,
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true
+}

@@ -229,6 +229,49 @@ serviceMonitor:
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our development process, coding standards, and how to submit pull requests.
 
+### 📝 Commit Message Format
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for automated releases and changelog generation. **All commits must follow this format:**
+
+```
+<type>: <description>
+
+[optional body]
+
+[optional footer]
+```
+
+**Valid types:**
+- `feat`: A new feature (triggers minor version bump)
+- `fix`: A bug fix (triggers patch version bump)
+- `docs`: Documentation only changes
+- `style`: Code style changes (formatting, missing semicolons, etc.)
+- `refactor`: Code refactoring without functionality changes
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Changes to build process or auxiliary tools
+- `ci`: CI configuration changes
+- `build`: Changes to build system or dependencies
+
+**Examples:**
+```
+feat: add support for bucket versioning
+fix: correct owner change logic for garage backend
+docs: update installation instructions
+test: add tests for graceful shutdown
+chore(deps): update kubernetes dependencies
+```
+
+**Breaking Changes:**
+For breaking changes, add `!` after the type or include `BREAKING CHANGE:` in the footer:
+```
+feat!: remove deprecated API endpoint
+
+BREAKING CHANGE: The /api/v1/legacy endpoint has been removed.
+```
+
+💡 **Tip:** When creating pull requests, you can squash commits and write a proper conventional commit message during merge.
+
 - **[Contributing Guide](CONTRIBUTING.md)** - Development setup and contribution guidelines
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community standards and expectations
 - **[Security Policy](SECURITY.md)** - How to report security vulnerabilities
