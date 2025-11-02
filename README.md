@@ -1,15 +1,15 @@
 # S3 Resource Operator
 
-[![Build and Publish](https://github.com/<your-github-username>/<your-repo-name>/actions/workflows/publish.yml/badge.svg)](https://github.com/<your-github-username>/<your-repo-name>/actions/workflows/publish.yml)
+[![Build and Publish](https://github.com/runningman84/s3-resource-operator/actions/workflows/publish.yml/badge.svg)](https://github.com/runningman84/s3-resource-operator/actions/workflows/publish.yml)
 
-A Kubernetes operator to manage VersityGW S3 buckets and IAM users declaratively using Kubernetes secrets.
+A Kubernetes operator to manage S3 buckets and IAM users for S3-compatible object stores like VersityGW, MinIO, and Garage, declaratively using Kubernetes secrets.
 
 ## Overview
 
-The S3 Resource Operator automates the lifecycle of S3 resources within a VersityGW S3-compatible object store. By watching for specially annotated Kubernetes secrets, the operator can automatically:
+The S3 Resource Operator automates the lifecycle of S3 resources within a compatible object store (e.g., VersityGW, MinIO, Garage). By watching for specially annotated Kubernetes secrets, the operator can automatically:
 
-- Create and delete S3 buckets.
-- Create and delete IAM users.
+- Create S3 buckets.
+- Create IAM users.
 - Assign ownership of a bucket to a newly created user.
 
 This allows for a GitOps-friendly, declarative approach to managing basic S3 resources directly from your Kubernetes manifests.
@@ -28,8 +28,8 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 
 - A running Kubernetes cluster (v1.21+).
 - [Helm v3+](https://helm.sh/docs/intro/install/) installed.
-- A running instance of [VersityGW](https://github.com/versity/versitygw) accessible from the cluster.
-- Admin credentials for your VersityGW instance.
+- A running instance of an S3-compatible object store (e.g., [VersityGW](https://github.com/versity/versitygw), [MinIO](https://min.io/)) accessible from the cluster.
+- Admin credentials for your S3 instance.
 
 ## Installation
 
@@ -40,28 +40,28 @@ The operator is deployed using a Helm chart.
     First, add the Helm repository that is published via GitHub Pages.
 
     ```sh
-    helm repo add <your-repo-name> https://<your-github-username>.github.io/<your-repo-name>
+    helm repo add s3-resource-operator https://runningman84.github.io/s3-resource-operator
     helm repo update
     ```
 
 2.  **Install the Chart**
 
-    Install the chart into your cluster. You must provide the admin credentials and the endpoint URL for your VersityGW instance.
+    Install the chart into your cluster. You must provide the admin credentials and the endpoint URL for your S3 instance.
 
     ```sh
-helm install s3-resource-operator <your-repo-name>/s3-resource-operator \\
-      --namespace s3-resource-operator \\
-      --create-namespace \
-      --set versitygw.endpointUrl="http://<your-versitygw-service>:7070" \
-      --set versitygw.adminAccessKey="<your-admin-access-key>" \
-      --set versitygw.adminSecretKey="<your-admin-secret-key>"
+    helm install s3-resource-operator s3-resource-operator/s3-resource-operator 
+          --namespace s3-resource-operator 
+          --create-namespace 
+          --set s3.endpointUrl="http://<your-s3-service-endpoint>" 
+          --set s3.adminAccessKey="<your-admin-access-key>" 
+          --set s3.adminSecretKey="<your-admin-secret-key>"
     ```
 
 ## Usage
 
 To provision a new bucket and user, create a Kubernetes `Secret` with the required annotation and data fields.
 
-The operator looks for secrets with the annotation `s3-resource-operator/enabled: "true"`.
+The operator looks for secrets with the annotation `s3-resource-operator.io/enabled: "true"`.
 
 ### Example Secret
 
@@ -76,7 +76,7 @@ metadata:
   name: my-app-s3-credentials
   namespace: my-app
   annotations:
-    s3-resource-operator/enabled: "true"
+    s3-resource-operator.io/enabled: "true"
 type: Opaque
 stringData:
   # Required fields
@@ -85,6 +85,7 @@ stringData:
   access-secret: "a-very-strong-and-long-password"
 
   # Optional fields
+  endpoint-url: "http://<your-s3-service-endpoint>"
   role: "user"
   user-id: "1001"
   group-id: "1001"
@@ -101,13 +102,14 @@ Once applied, the operator will perform the following actions:
 2.  Create an S3 bucket named `my-app-backups`.
 3.  Change the owner of the `my-app-backups` bucket to `my-app-user`.
 
-When you delete the secret, the operator will automatically delete the user and the bucket.
+When you delete the secret, the operator will not delete the user or the bucket. This is a safety measure to prevent accidental data loss.
 
 The secret should contain the following data fields:
 
 - `bucket-name`: The name of the S3 bucket. **(Required)**
 - `access-key`: The access key for the IAM user. **(Required)**
 - `access-secret`: The secret key for the IAM user. **(Required)**
+- `endpoint-url`: (Optional) The S3 endpoint URL. If provided, it must match the operator's `S3_ENDPOINT_URL` configuration.
 - `role`: (Optional) The role to assign to the user.
 - `user-id`: (Optional) The user ID to assign to the user.
 - `group-id`: (Optional) The group ID to assign to the user.
@@ -123,8 +125,8 @@ To run the operator locally for development, you need Python 3.9+ and the requir
 1.  **Clone the repository:**
 
     ```sh
-    git clone https://github.com/<your-github-username>/<your-repo-name>.git
-    cd <your-repo-name>
+    git clone https://github.com/runningman84/s3-resource-operator.git
+    cd s3-resource-operator
     ```
 
 2.  **Install dependencies:**
@@ -139,16 +141,17 @@ To run the operator locally for development, you need Python 3.9+ and the requir
 
     ```sh
     export KUBECONFIG=~/.kube/config
-    export S3_ENDPOINT_URL="http://<your-versitygw-endpoint>"
+    export S3_ENDPOINT_URL="http://<your-s3-endpoint>"
     export S3_ACCESS_KEY="<your-admin-access-key>"
     export S3_SECRET_KEY="<your-admin-secret-key>"
-    export ANNOTATION_KEY="s3-resource-operator/enabled"
+    export ANNOTATION_KEY="s3-resource-operator.io/enabled"
+    export BACKEND_NAME="versitygw"
     ```
 
 4.  **Run the operator:**
 
     ```sh
-    python src/main.py
+    python3 -m src.main
     ```
 
 ## CI/CD
@@ -163,7 +166,7 @@ The operator can be configured using the following environment variables:
 
 | Environment Variable      | Description                                                                 | Default                        |
 | ------------------------- | --------------------------------------------------------------------------- | ------------------------------ |
-| `ANNOTATION_KEY`          | The annotation key to look for on secrets.                                  | `s3-resource-operator/enabled` |
+| `ANNOTATION_KEY`          | The annotation key to look for on secrets.                                  | `s3-resource-operator.io/enabled` |
 | `S3_ENDPOINT_URL`         | The URL of the S3 endpoint.                                                 | (required)                     |
 | `S3_ACCESS_KEY`           | The access key for the S3 endpoint (for the operator itself).               | (required)                     |
 | `S3_SECRET_KEY`           | The secret key for the S3 endpoint (for the operator itself).               | (required)                     |

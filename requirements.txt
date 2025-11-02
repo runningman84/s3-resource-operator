@@ -2,3 +2,5 @@ kubernetes
 boto3
 requests
 botocore
+prometheus-client
+python-dotenv

@@ -13,3 +13,24 @@ spec:
       name: http
   selector:
     {{- include "s3-resource-operator.selectorLabels" . | nindent 4 }}
+
+{{- if .Values.metrics.service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "s3-resource-operator.fullname" . }}-metrics
+  labels:
+    {{- include "s3-resource-operator.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.metrics.service.annotations | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.metrics.service.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "s3-resource-operator.selectorLabels" . | nindent 4 }}
+{{- end }}

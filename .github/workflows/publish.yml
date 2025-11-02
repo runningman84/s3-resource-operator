@@ -42,6 +42,25 @@ jobs:
 
       - name: Test Helm chart
         run: helm template ./helm --debug
+
+      - name: Build image
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: local/s3-resource-operator:latest
+
+      - name: Scan image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'local/s3-resource-operator:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
   release:
     needs: test
     runs-on: ubuntu-latest
@@ -61,7 +80,7 @@ jobs:
         run: sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
 
       - name: Install semantic-release dependencies
-        run: npm install semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog @semantic-release/exec @semantic-release/git @semantic-release/github
+        run: npm install
 
       - name: Run semantic-release
         env:
@@ -110,9 +129,6 @@ jobs:
         run: |
           helm package ./helm
 
-      - name: Publish Helm chart to GitHub Pages
-        uses: stefanprodan/helm-gh-pages@v1.6.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          charts_dir: .
-          charts_url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      - name: Push Helm chart to GHCR
+        run: |
+          helm push s3-resource-operator-*.tgz oci://ghcr.io/${{ github.repository_owner }}

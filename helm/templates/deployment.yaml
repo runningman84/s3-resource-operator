@@ -35,6 +35,9 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /
@@ -43,6 +46,26 @@ spec:
             httpGet:
               path: /
               port: http
+          env:
+            - name: ANNOTATION_KEY
+              value: {{ .Values.operator.annotation_key }}
+            - name: BACKEND_NAME
+              value: {{ .Values.operator.backend_name }}
+            - name: S3_ENDPOINT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "s3-resource-operator.secretName" . }}
+                  key: S3_ENDPOINT_URL
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "s3-resource-operator.secretName" . }}
+                  key: S3_ACCESS_KEY
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "s3-resource-operator.secretName" . }}
+                  key: S3_SECRET_KEY
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
