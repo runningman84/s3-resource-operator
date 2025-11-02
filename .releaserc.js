@@ -7,11 +7,7 @@ module.exports = {
     [
       '@semantic-release/exec',
       {
-        prepareCmd: `
-          yq e -i '.version = "${nextRelease.version}"' helm/Chart.yaml &&
-          yq e -i '.appVersion = "${nextRelease.version}"' helm/Chart.yaml &&
-          yq e -i '.image.tag = "${nextRelease.version}"' helm/values.yaml
-        `,
+        prepareCmd: 'yq e -i \'.version = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.appVersion = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.image.tag = "${nextRelease.version}"\' helm/values.yaml',
       },
     ],
     [
