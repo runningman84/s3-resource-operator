@@ -35,14 +35,14 @@ class VersityGW(Backend):
         except self.s3.exceptions.BucketAlreadyExists:
             logger.warning(f"S3 bucket '{bucket_name}' already exists and is owned by someone else.")
         except Exception as e:
-            logger.error(f"Error creating bucket '{bucket_name}': {e}")
+            raise Exception(f"Error creating bucket '{bucket_name}': {e}")
 
     def delete_bucket(self, bucket_name):
         try:
             self.s3.delete_bucket(Bucket=bucket_name)
             logger.info(f"S3 bucket '{bucket_name}' deleted.")
         except Exception as e:
-            logger.error(f"Error deleting bucket '{bucket_name}': {e}")
+            raise Exception(f"Error deleting bucket '{bucket_name}': {e}")
 
     def _list_buckets_raw(self):
         signed_request = sign_v4_request(
@@ -64,11 +64,9 @@ class VersityGW(Backend):
                     for b in root.findall('Buckets')
                 ]
             except ET.ParseError:
-                logger.error("Failed to parse XML response from list-buckets.")
-                return []
+                raise Exception("Failed to parse XML response from list-buckets.")
         else:
-            logger.error(f"Error listing buckets: {response.status_code} {response.text}")
-            return []
+            raise Exception(f"Error listing buckets: {response.status_code} {response.text}")
 
     def bucket_exists(self, bucket_name):
         return any(b['Name'] == bucket_name for b in self._list_buckets_raw())
@@ -84,7 +82,7 @@ class VersityGW(Backend):
         signed_request = sign_v4_request("PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, b"")
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            logger.error(f"Failed to change owner of bucket '{bucket_name}' to '{new_owner}': {response.status_code} {response.text}")
+            raise Exception(f"Failed to change owner of bucket '{bucket_name}' to '{new_owner}': {response.status_code} {response.text}")
         else:
             logger.info(f"Successfully sent request to change owner of bucket '{bucket_name}' to '{new_owner}'.")
 
@@ -103,7 +101,7 @@ class VersityGW(Backend):
         signed_request = sign_v4_request("PATCH", f"{self.endpoint_url}/create-user", "us-east-1", "s3", self.access_key, self.secret_key, xml_payload)
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            logger.error(f"Failed to create user '{access_key}': {response.status_code} {response.text}")
+            raise Exception(f"Failed to create user '{access_key}': {response.status_code} {response.text}")
         else:
             logger.info(f"Successfully sent create user request for '{access_key}'.")
 
@@ -118,7 +116,7 @@ class VersityGW(Backend):
         signed_request = sign_v4_request("PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, xml_payload)
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            logger.error(f"Failed to update user '{access_key}': {response.status_code} {response.text}")
+            raise Exception(f"Failed to update user '{access_key}': {response.status_code} {response.text}")
         else:
             logger.info(f"Successfully sent update request for user '{access_key}'.")
 
@@ -127,7 +125,7 @@ class VersityGW(Backend):
         signed_request = sign_v4_request("PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, b"")
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            logger.error(f"Failed to delete user '{access_key}': {response.status_code} {response.text}")
+            raise Exception(f"Failed to delete user '{access_key}': {response.status_code} {response.text}")
         else:
             logger.info(f"Successfully deleted user '{access_key}'.")
 
@@ -142,11 +140,9 @@ class VersityGW(Backend):
                     for a in root.findall('Accounts')
                 ]
             except ET.ParseError:
-                logger.error("Failed to parse XML response from list-users.")
-                return []
+                raise Exception("Failed to parse XML response from list-users.")
         else:
-            logger.error(f"Failed to list users: {response.status_code} {response.text}")
-            return []
+            raise Exception(f"Failed to list users: {response.status_code} {response.text}")
 
     def user_exists(self, access_key):
         return any(u['Access'] == access_key for u in self._list_users_raw())

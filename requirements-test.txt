@@ -2,3 +2,6 @@ pytest
 pytest-cov
 moto
 mock
+kubernetes
+pytest-mock
+

@@ -41,7 +41,8 @@ def test_process_secret(kube_client):
     data = {
         "bucket-name": "test-bucket",
         "access-key": "test-user",
-        "access-secret": "test-password"
+        "access-secret": "test-password",
+        "endpoint-url": "http://s3.example.com"
     }
 
     # Create a mock secret
@@ -54,24 +55,26 @@ def test_process_secret(kube_client):
     # Assert that the data is correctly decoded
     assert processed_data == data
 
-def test_handle_secret_creation(versitygw_client):
+def test_handle_secret_creation(kube_client, versitygw_client):
     """Test handling a secret for a new bucket and user."""
     # Mock backend and secret manager
     backend = versitygw_client
     secret_manager = MagicMock()
 
     # Operator instance
-    op = Operator(backend, secret_manager)
+    op = Operator(kube_client, backend, secret_manager)
 
     # Mock secret data
     secret_data = {
         "bucket-name": "new-bucket",
         "access-key": "new-user",
-        "access-secret": "new-password"
+        "access-secret": "new-password",
+        "endpoint-url": "http://versitygw:8080",
     }
     secret_manager.process_secret.return_value = secret_data
 
     # Mock backend methods
+    backend.endpoint_url = "http://versitygw:8080"
     backend.bucket_exists.return_value = False
     backend.user_exists.return_value = False
 
@@ -87,19 +90,21 @@ def test_handle_secret_creation(versitygw_client):
     backend.user_exists.assert_called_once_with("new-user")
     backend.create_user.assert_called_once()
 
-def test_handle_secret_existing_resources(versitygw_client):
+def test_handle_secret_existing_resources(kube_client, versitygw_client):
     """Test handling a secret for existing resources."""
     backend = versitygw_client
     secret_manager = MagicMock()
-    op = Operator(backend, secret_manager)
+    op = Operator(kube_client, backend, secret_manager)
 
     secret_data = {
         "bucket-name": "existing-bucket",
         "access-key": "existing-user",
-        "access-secret": "existing-password"
+        "access-secret": "existing-password",
+        "endpoint-url": "http://versitygw:8080",
     }
     secret_manager.process_secret.return_value = secret_data
 
+    backend.endpoint_url = "http://versitygw:8080"
     backend.bucket_exists.return_value = True
     backend.user_exists.return_value = True
     backend.get_bucket_owner.return_value = "existing-user"
@@ -112,19 +117,21 @@ def test_handle_secret_existing_resources(versitygw_client):
     backend.create_user.assert_not_called()
     backend.change_bucket_owner.assert_not_called()
 
-def test_handle_secret_change_owner(versitygw_client):
+def test_handle_secret_change_owner(kube_client, versitygw_client):
     """Test changing the owner of an existing bucket."""
     backend = versitygw_client
     secret_manager = MagicMock()
-    op = Operator(backend, secret_manager)
+    op = Operator(kube_client, backend, secret_manager)
 
     secret_data = {
         "bucket-name": "existing-bucket",
         "access-key": "new-owner",
-        "access-secret": "new-password"
+        "access-secret": "new-password",
+        "endpoint-url": "http://s3.example.com"
     }
     secret_manager.process_secret.return_value = secret_data
 
+    backend.endpoint_url = "http://s3.example.com"
     backend.bucket_exists.return_value = True
     backend.get_bucket_owner.return_value = "old-owner"
 
