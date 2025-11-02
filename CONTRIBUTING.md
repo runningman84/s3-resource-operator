@@ -30,7 +30,38 @@ Feature requests are welcome! Please create an issue describing:
 3. **Add tests** for any new functionality
 4. **Update documentation** if needed
 5. **Ensure tests pass**: `pytest -v`
-6. **Submit a pull request** to the `develop` branch
+6. **Sign your commits** (see Developer Certificate of Origin below)
+7. **Submit a pull request** to the `develop` branch
+
+## Developer Certificate of Origin (DCO)
+
+This project requires all commits to be signed off to certify that you have the right to submit the code under the project's license. This is done by adding a `Signed-off-by` line to your commit messages.
+
+### How to Sign Your Commits
+
+**Automatically sign all commits:**
+```bash
+git config --global format.signoff true
+```
+
+**Or sign individual commits:**
+```bash
+git commit -s -m "feat: your commit message"
+```
+
+This adds a line like:
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+**To fix commits that are missing sign-off:**
+```bash
+# For the last commit
+git commit --amend --signoff --no-edit
+
+# Then force push (if already pushed)
+git push --force-with-lease
+```
 
 ### Development Setup
 
