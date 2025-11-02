@@ -15,17 +15,99 @@ permissions:
   packages: write # Needed to push docker image and helm chart to ghcr.io
 
 jobs:
-  build-and-publish:
-    runs-on: ubuntu-latest
+  build-multiarch:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Determine tag
         id: tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            TAG="${{ inputs.tag }}"
           else
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            TAG="${{ github.event.release.tag_name }}"
           fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          # Extract version without 'v' prefix
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Debug info
+        run: |
+          echo "Building for: ${{ matrix.platform }}"
+          echo "Runner: ${{ matrix.runner }}"
+          echo "Tag: ${{ steps.tag.outputs.tag }}"
+          echo "Version: ${{ steps.tag.outputs.version }}"
+          uname -m
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
+          labels: |
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.version=${{ steps.tag.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build-multiarch
+    steps:
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          # Extract version without 'v' prefix
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,6 +118,7 @@ jobs:
         run: |
           echo "Event: ${{ github.event_name }}"
           echo "Tag: ${{ steps.tag.outputs.tag }}"
+          echo "Version: ${{ steps.tag.outputs.version }}"
           echo "Release tag: ${{ github.event.release.tag_name }}"
           echo "Release name: ${{ github.event.release.name }}"
           echo "Release ref: ${{ github.ref }}"
@@ -47,23 +130,61 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Download digests
+        uses: actions/download-artifact@v4
         with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          pattern: digests-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - name: Prepare Docker tags
+        id: docker-tags
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          REPO="ghcr.io/${{ github.repository }}"
+
+          # Extract major and minor versions
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+
+          # Build tags (space-separated for buildx)
+          TAGS="${REPO}:${VERSION} ${REPO}:${MAJOR}.${MINOR} ${REPO}:${MAJOR} ${REPO}:latest"
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "Docker tags: $TAGS"
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          TAGS="${{ steps.docker-tags.outputs.tags }}"
+
+          # Create buildx imagetools command with all tags
+          CMD="docker buildx imagetools create"
+          for tag in $TAGS; do
+            CMD="$CMD -t $tag"
+          done
+
+          # Add all digests
+          for digest in $(ls); do
+            CMD="$CMD ghcr.io/${{ github.repository }}@sha256:$digest"
+          done
+
+          echo "Running: $CMD"
+          eval $CMD
+
+      - name: Docker build summary
+        run: |
+          echo "✅ Multi-architecture Docker image built and pushed successfully!"
+          echo "Architectures: linux/amd64 (native), linux/arm64 (native)"
+          echo "Tags:"
+          echo "${{ steps.docker-tags.outputs.tags }}" | tr ' ' '\n' | sed 's/^/  - /'
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.version }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v3
@@ -74,9 +195,19 @@ jobs:
         id: helm-package
         run: |
           CHART_VERSION=$(helm show chart ./helm | grep '^version:' | awk '{print $2}')
+          echo "Chart version from Chart.yaml: $CHART_VERSION"
+          echo "Expected version: ${{ steps.tag.outputs.version }}"
+
+          # Verify versions match
+          if [ "$CHART_VERSION" != "${{ steps.tag.outputs.version }}" ]; then
+            echo "WARNING: Chart version ($CHART_VERSION) doesn't match release version (${{ steps.tag.outputs.version }})"
+            echo "This might indicate semantic-release didn't update Chart.yaml correctly"
+          fi
+
           helm package ./helm
           echo "chart_path=s3-resource-operator-${CHART_VERSION}.tgz" >> $GITHUB_OUTPUT
           echo "chart_version=${CHART_VERSION}" >> $GITHUB_OUTPUT
+          echo "Packaged: s3-resource-operator-${CHART_VERSION}.tgz"
 
       - name: Login to GHCR for Helm
         run: |
@@ -84,4 +215,8 @@ jobs:
 
       - name: Push Helm chart to GHCR
         run: |
-          helm push ${{ steps.helm-package.outputs.chart_path }} oci://ghcr.io/${{ github.repository_owner }}
+          CHART_FILE="${{ steps.helm-package.outputs.chart_path }}"
+          CHART_VERSION="${{ steps.helm-package.outputs.chart_version }}"
+          echo "Pushing Helm chart: $CHART_FILE (version: $CHART_VERSION)"
+          helm push $CHART_FILE oci://ghcr.io/${{ github.repository_owner }}
+          echo "Successfully pushed to: oci://ghcr.io/${{ github.repository_owner }}/s3-resource-operator:$CHART_VERSION"
