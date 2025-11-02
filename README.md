@@ -21,8 +21,10 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 - **Bucket Ownership Management**: Ensures existing buckets are owned by the correct user, and changes the owner if necessary.
 - **Dynamic Reconfiguration**: Watches for changes to secrets and updates resources accordingly.
 - **Initial Sync**: On startup, the operator performs a full sync to ensure all declared resources are correctly configured.
+- **Graceful Shutdown**: Properly handles SIGTERM and SIGINT signals for clean shutdown in Kubernetes environments.
+- **Prometheus Metrics**: Exposes metrics on port 8000 for monitoring (secrets processed, errors, sync duration).
 - **Configurable**: All settings, including S3 endpoint and credentials, are configurable via environment variables.
-- **Helm Chart**: Comes with a Helm chart for easy deployment.
+- **Helm Chart**: Comes with a Helm chart for easy deployment via OCI registry.
 
 ## Prerequisites
 
@@ -33,28 +35,35 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 
 ## Installation
 
-The operator is deployed using a Helm chart.
+The operator is deployed using a Helm chart published to GitHub Container Registry (OCI).
 
-1.  **Add the Helm Repository**
+1.  **Install from OCI Registry**
 
-    First, add the Helm repository that is published via GitHub Pages.
+    Install the chart directly from the OCI registry:
 
     ```sh
-    helm repo add s3-resource-operator https://runningman84.github.io/s3-resource-operator
-    helm repo update
+    helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+          --version 0.1.0 \
+          --namespace s3-resource-operator \
+          --create-namespace \
+          --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+          --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
+          --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
     ```
 
-2.  **Install the Chart**
+2.  **Alternative: Install from local chart**
 
-    Install the chart into your cluster. You must provide the admin credentials and the endpoint URL for your S3 instance.
+    Or clone the repository and install locally:
 
     ```sh
-    helm install s3-resource-operator s3-resource-operator/s3-resource-operator 
-          --namespace s3-resource-operator 
-          --create-namespace 
-          --set s3.endpointUrl="http://<your-s3-service-endpoint>" 
-          --set s3.adminAccessKey="<your-admin-access-key>" 
-          --set s3.adminSecretKey="<your-admin-secret-key>"
+    git clone https://github.com/runningman84/s3-resource-operator.git
+    cd s3-resource-operator
+    helm install s3-resource-operator ./helm \
+          --namespace s3-resource-operator \
+          --create-namespace \
+          --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+          --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
+          --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
     ```
 
 ## Usage
@@ -120,7 +129,7 @@ It is recommended to use a tool like the [External Secrets Operator](https://ext
 
 ## Development
 
-To run the operator locally for development, you need Python 3.9+ and the required dependencies.
+To run the operator locally for development, you need Python 3.12+ and the required dependencies.
 
 1.  **Clone the repository:**
 
@@ -156,9 +165,16 @@ To run the operator locally for development, you need Python 3.9+ and the requir
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and deployment. The workflow in `.github/workflows/publish.yml` handles:
-- **Building the Docker Image**: On every push to `main`, the Docker image is built and pushed to the GitHub Container Registry (GHCR).
-- **Publishing the Helm Chart**: The Helm chart is packaged and published to a `gh-pages` branch, which serves as a public Helm repository.
+This project uses GitHub Actions for continuous integration and deployment. The workflows handle:
+- **Testing**: Runs tests on every push and pull request (`.github/workflows/test.yml`)
+- **Release**: Creates semantic releases and tags when code is merged to main (`.github/workflows/release.yml`)
+- **Publishing**: Builds and publishes Docker images and Helm charts to GHCR when tags are created (`.github/workflows/publish.yml`)
+
+### Release Flow
+1. Code is merged to `main` branch
+2. Semantic-release creates a new version tag
+3. Docker image is built and pushed to `ghcr.io/runningman84/s3-resource-operator`
+4. Helm chart is packaged and pushed to `oci://ghcr.io/runningman84/s3-resource-operator`
 
 ## Configuration
 
@@ -171,6 +187,21 @@ The operator can be configured using the following environment variables:
 | `S3_ACCESS_KEY`           | The access key for the S3 endpoint (for the operator itself).               | (required)                     |
 | `S3_SECRET_KEY`           | The secret key for the S3 endpoint (for the operator itself).               | (required)                     |
 | `BACKEND_NAME`            | The name of the S3 backend to use (`versitygw`, `minio`, `garage`).         | `versitygw`                    |
+
+## Monitoring
+
+The operator exposes Prometheus metrics on port 8000 at the `/metrics` endpoint. The following metrics are available:
+
+- `s3_operator_secrets_processed_total`: Total number of secrets processed
+- `s3_operator_errors_total`: Total number of errors encountered
+- `s3_operator_sync_duration_seconds`: Duration of sync cycles (histogram)
+- `s3_operator_handle_secret_duration_seconds`: Duration of handling individual secrets (histogram)
+
+To access metrics:
+```sh
+kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 8000:8000
+curl http://localhost:8000/metrics
+```
 
 ## Contributing
 

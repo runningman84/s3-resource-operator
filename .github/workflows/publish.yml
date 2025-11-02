@@ -9,8 +9,8 @@ on:
       - 'v*'
 
 permissions:
-  contents: write # Needed to push to the gh-pages branch
-  packages: write # Needed to push docker image to ghcr.io
+  contents: write # Needed for creating releases and tags
+  packages: write # Needed to push docker image and helm chart to ghcr.io
   issues: write
   pull-requests: write
 
@@ -101,13 +101,17 @@ jobs:
           version: 'v3.13.2' # Specify a specific Helm version
 
       - name: Package Helm chart
+        id: helm-package
         run: |
+          CHART_VERSION=$(helm show chart ./helm | grep '^version:' | awk '{print $2}')
           helm package ./helm
+          echo "chart_path=s3-resource-operator-${CHART_VERSION}.tgz" >> $GITHUB_OUTPUT
+          echo "chart_version=${CHART_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR for Helm
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push Helm chart to GHCR
         run: |
-          helm push s3-resource-operator-*.tgz oci://ghcr.io/${{ github.repository_owner }}
+          helm push ${{ steps.helm-package.outputs.chart_path }} oci://ghcr.io/${{ github.repository_owner }}
