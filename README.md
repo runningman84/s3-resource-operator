@@ -187,13 +187,13 @@ This project uses GitHub Actions for continuous integration and deployment with 
 
 3. **Release** (`.github/workflows/release.yml`)
    - Runs on: Push to `main` branch
-   - Flow:
-     - Calls test workflow (reuses `test.yml`)
-     - Uses semantic-release to analyze commits
-     - Automatically determines version bump (major/minor/patch)
-     - Updates `CHANGELOG.md`, `helm/Chart.yaml`, and `helm/values.yaml`
-     - Creates git tag and GitHub release
-     - **Automatically calls the Build and Publish workflow**
+   - Flow (3 sequential jobs):
+     - **Test job**: Calls test workflow (reuses `test.yml`)
+     - **Release job**: Runs semantic-release to create version and tag
+       - Analyzes commits to determine version bump (major/minor/patch)
+       - Updates `CHANGELOG.md`, `helm/Chart.yaml`, and `helm/values.yaml`
+       - Creates git tag and GitHub release
+     - **Publish job**: Calls Build and Publish workflow (only if release was created)
    - Requirements: All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) format
 
 4. **Build and Publish** (`.github/workflows/publish.yml`)
@@ -330,19 +330,31 @@ The release process is fully automated using semantic versioning:
 ```
 Developer Pushes to main
          ↓
-   Release Workflow
-    ├─ Call Test Workflow (reuses test.yml)
-    │   ├─ Python tests
-    │   ├─ Helm validation
-    │   ├─ Docker build
-    │   └─ Trivy security scan
-    ├─ Semantic Release
-    │   ├─ Determine Version
-    │   ├─ Update Files
-    │   ├─ Create Tag
-    │   └─ Create GitHub Release
-    └─ Call Publish Workflow
-         ↓
+   Release Workflow (3 Jobs)
+    ┌──────────────────────┐
+    │ Job 1: Test          │
+    │ - Call test.yml      │
+    │ - Python tests       │
+    │ - Helm validation    │
+    │ - Docker build       │
+    │ - Trivy scan         │
+    └──────────┬───────────┘
+               ↓
+    ┌──────────────────────┐
+    │ Job 2: Release       │
+    │ - Semantic Release   │
+    │ - Determine Version  │
+    │ - Update Files       │
+    │ - Create Tag         │
+    │ - Create Release     │
+    └──────────┬───────────┘
+               ↓
+    ┌──────────────────────┐
+    │ Job 3: Publish       │
+    │ - Call publish.yml   │
+    │   (if release created)│
+    └──────────┬───────────┘
+               ↓
    Build and Publish Workflow
     ├─ Build AMD64 Image (native ubuntu-24.04)
     ├─ Build ARM64 Image (native ubuntu-24.04-arm)
