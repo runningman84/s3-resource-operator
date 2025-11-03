@@ -213,6 +213,15 @@ This project uses GitHub Actions for continuous integration and deployment with 
    - **Helm chart** package and publish to OCI registry
      - Publishes to: `oci://ghcr.io/runningman84/s3-resource-operator`
 
+5. **Sync Main to Develop** (`.github/workflows/sync.yml`)
+   - Runs on: Push to `main` branch (after releases)
+   - Automatically syncs changes from `main` back to `develop`
+   - Ensures `develop` stays up-to-date with:
+     - CHANGELOG.md updates
+     - Version bumps in Chart.yaml and values.yaml
+     - Any hotfixes or patches applied to main
+   - Uses `[skip ci]` to prevent triggering unnecessary workflows
+
 ### Multi-Architecture Images
 
 Docker images are built natively for both AMD64 and ARM64 architectures without using slow QEMU emulation. This means:
@@ -343,6 +352,9 @@ Developer Pushes to main
     ├─ Scan for Vulnerabilities (Grype)
     ├─ Upload SBOMs & Reports to Release
     └─ Package & Publish Helm Chart
+         ↓
+   Sync Main to Develop Workflow
+    └─ Merge main → develop (includes CHANGELOG, versions)
          ↓
    🎉 Release Complete!
 ```
