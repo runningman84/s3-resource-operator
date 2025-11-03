@@ -169,6 +169,97 @@ To run the operator locally for development, you need Python 3.12+ and the requi
     python3 -m src.main
     ```
 
+## Code Architecture
+
+The operator follows a modular architecture with clear separation of concerns:
+
+### Source Code Structure
+
+```
+src/
+├── main.py           # Entry point and application initialization
+├── operator.py       # Main operator logic and watch loop
+├── secrets.py        # Kubernetes secret discovery and processing
+├── metrics.py        # Prometheus metrics and health endpoints
+├── utils.py          # Utility functions (Kubernetes API client, signing)
+└── backends/         # S3 backend implementations
+    ├── backend.py    # Abstract base class
+    ├── versitygw.py  # VersityGW backend
+    ├── minio.py      # MinIO backend
+    └── garage.py     # Garage backend
+```
+
+### Module Responsibilities
+
+#### `main.py` - Entry Point
+- Application initialization and configuration
+- Environment variable loading
+- Signal handler setup for graceful shutdown
+- Orchestrates startup of all components
+
+#### `operator.py` - Operator Logic
+- **Operator class**: Main orchestration and watch loop
+- Secret lifecycle management (`handle_secret`)
+- Periodic synchronization (`sync`)
+- Kubernetes watch stream handling
+- Prometheus metrics definitions:
+  - `s3_operator_secrets_processed_total`
+  - `s3_operator_errors_total`
+  - `s3_operator_sync_duration_seconds`
+  - `s3_operator_handle_secret_duration_seconds`
+
+#### `secrets.py` - Secret Management
+- **SecretManager class**: Kubernetes secret operations
+- Secret discovery with annotation filtering
+- Base64 decoding of secret data
+- Secret validation and processing
+
+#### `metrics.py` - Observability
+- **MetricsServer class**: HTTP server for monitoring
+- Prometheus metrics endpoint (`/metrics`)
+- Health check endpoint (`/healthz`)
+- Threaded HTTP server for non-blocking operation
+
+#### `utils.py` - Utilities
+- Kubernetes API client initialization (`get_k8s_api`)
+- AWS Signature V4 request signing
+- Signed request execution
+- Reusable helper functions
+
+#### `backends/` - Backend Implementations
+- Abstract `Backend` base class defining the interface
+- Backend-specific implementations for:
+  - **VersityGW**: Full support (create bucket/user, ownership)
+  - **MinIO**: Planned support
+  - **Garage**: Planned support
+- Pluggable architecture for easy backend addition
+
+### Test Structure
+
+Tests are organized to mirror the source code structure:
+
+```
+tests/
+├── conftest.py         # Pytest fixtures and configuration
+├── test_operator.py    # Tests for Operator class
+├── test_secrets.py     # Tests for SecretManager class
+├── test_metrics.py     # Tests for Prometheus metrics
+├── test_health.py      # Tests for health endpoints
+├── test_shutdown.py    # Tests for graceful shutdown
+├── test_backends.py    # Tests for backend implementations
+└── test_config.py      # Tests for configuration loading
+```
+
+Each test module corresponds to its source module, making it easy to locate and maintain tests.
+
+### Design Principles
+
+- **Single Responsibility**: Each module has a focused purpose
+- **Separation of Concerns**: Clear boundaries between components
+- **Testability**: Modular design enables comprehensive unit testing
+- **Extensibility**: New backends can be added without modifying core logic
+- **Observability**: Built-in metrics and health checks
+
 ## CI/CD
 
 This project uses GitHub Actions for continuous integration and deployment with a fully automated release pipeline:

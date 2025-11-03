@@ -1,10 +1,11 @@
+"""Tests for Prometheus metrics."""
+
 import pytest
+from src.operator import SECRETS_PROCESSED, ERRORS_TOTAL
+
 
 def test_prometheus_metrics():
     """Test that Prometheus metrics are being incremented."""
-    # Import after the previous test to avoid conflicts
-    from src.main import SECRETS_PROCESSED, ERRORS_TOTAL
-
     # Get initial values
     initial_secrets = SECRETS_PROCESSED._value.get()
     initial_errors = ERRORS_TOTAL._value.get()
