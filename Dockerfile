@@ -13,5 +13,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application source code
 COPY src/ ./src/
 
+# Create a non-root user and group
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER 1000
+
 # Run the application when the container launches
 CMD ["python", "-m", "src.main"]
