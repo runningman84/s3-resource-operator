@@ -7,13 +7,13 @@ module.exports = {
     [
       '@semantic-release/exec',
       {
-        prepareCmd: 'yq e -i \'.version = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.appVersion = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.image.tag = "${nextRelease.version}"\' helm/values.yaml',
+        prepareCmd: 'yq e -i \'.version = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.appVersion = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.image.tag = "${nextRelease.version}"\' helm/values.yaml && sed -i "s/--version [0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/--version ${nextRelease.version}/g" README.md',
       },
     ],
     [
       '@semantic-release/git',
       {
-        assets: ['helm/Chart.yaml', 'helm/values.yaml', 'CHANGELOG.md'],
+        assets: ['helm/Chart.yaml', 'helm/values.yaml', 'CHANGELOG.md', 'README.md'],
         message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
       },
     ],
