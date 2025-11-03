@@ -297,8 +297,8 @@ This project uses GitHub Actions for continuous integration and deployment with 
      - Publishes to: `ghcr.io/runningman84/s3-resource-operator`
      - Tags: `latest`, `1.0.1`, `1.0`, `1`
    - **Security & Compliance**:
-     - Generates SBOMs for Docker images (SPDX & CycloneDX formats)
-     - Generates Python dependency SBOM
+     - Generates comprehensive SBOMs using Syft (SPDX & CycloneDX formats)
+     - Platform-specific SBOMs for AMD64 and ARM64
      - Scans for vulnerabilities using Grype
      - Uploads all SBOMs and scan reports to GitHub release
    - **Helm chart** package and publish to OCI registry
@@ -332,12 +332,22 @@ docker pull ghcr.io/runningman84/s3-resource-operator:latest
 Each release includes comprehensive Software Bill of Materials (SBOM) and vulnerability reports:
 
 #### SBOM Generation
-- **Docker Images**: SBOMs generated for both AMD64 and ARM64 platforms using [Syft](https://github.com/anchore/syft)
-  - Formats: SPDX and CycloneDX (JSON)
-  - Platform-specific SBOMs for detailed component tracking
-  - Combined SBOM for overall project view
-- **Python Dependencies**: Separate SBOM for all Python packages using cyclonedx-bom
-  - Includes all runtime and transitive dependencies
+
+Complete Software Bill of Materials (SBOM) generated using [Syft](https://github.com/anchore/syft):
+
+- **What it contains**: Complete runtime environment
+  - Operating system packages (Debian, Alpine, etc.)
+  - Python runtime and all installed packages
+  - System libraries and dependencies
+  - Everything actually deployed in production
+- **Formats**: SPDX and CycloneDX (JSON)
+- **Platform-specific**: Separate SBOMs for AMD64 and ARM64
+- **Combined SBOM**: Multi-platform overview
+- **Use cases**:
+  - Runtime security scanning
+  - Deployment compliance
+  - License compliance
+  - Supply chain security
   - CycloneDX format compatible with dependency tracking tools
 
 #### Vulnerability Scanning
@@ -368,7 +378,6 @@ gh release download v1.0.4 --pattern 'vulnerability-report*'
 - `sbom-amd64-cyclonedx.json` - AMD64-specific SBOM
 - `sbom-arm64-spdx.json` - ARM64-specific SBOM
 - `sbom-arm64-cyclonedx.json` - ARM64-specific SBOM
-- `sbom-python-cyclonedx.json` - Python dependencies SBOM
 - `vulnerability-report-amd64.txt` - AMD64 vulnerability scan (table)
 - `vulnerability-report-arm64.txt` - ARM64 vulnerability scan (table)
 - `vulnerability-report.json` - Vulnerability scan (JSON)
@@ -382,7 +391,6 @@ The generated SBOMs and reports can be integrated with:
 - **OWASP Dependency-Check**: Compatible with both formats
 - **Snyk, Anchore, Aqua**: Standard SBOM formats supported
 - **GitHub Code Scanning**: SARIF reports for vulnerability visibility
-
 ### Release Process
 
 The release process is fully automated using semantic versioning:
