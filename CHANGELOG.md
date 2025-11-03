@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/runningman84/s3-resource-operator/compare/v1.1.0...v1.2.0) (2025-11-03)
+
+
+### Features
+
+* refactor code ([836c8d4](https://github.com/runningman84/s3-resource-operator/commit/836c8d43459bdc90b62e50ec09a04084eb8de2e4))
+
 # [1.1.0](https://github.com/runningman84/s3-resource-operator/compare/v1.0.5...v1.1.0) (2025-11-03)
 
 
