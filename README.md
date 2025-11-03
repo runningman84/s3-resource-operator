@@ -49,7 +49,7 @@ The operator is deployed using a Helm chart published to GitHub Container Regist
 
     ```sh
     helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
-          --version 0.1.0 \
+          --version 1.2.0 \
           --namespace s3-resource-operator \
           --create-namespace \
           --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
