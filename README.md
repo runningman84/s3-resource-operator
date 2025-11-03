@@ -365,10 +365,10 @@ All SBOM and vulnerability reports are attached to each GitHub release:
 
 ```bash
 # Download SBOMs for a specific release
-gh release download v1.0.4 --pattern 'sbom-*.json'
+gh release download v1.2.0 --pattern 'sbom-*.json'
 
 # Download vulnerability reports
-gh release download v1.0.4 --pattern 'vulnerability-report*'
+gh release download v1.2.0 --pattern 'vulnerability-report*'
 ```
 
 **Files included with each release:**
@@ -421,8 +421,8 @@ The release process is fully automated using semantic versioning:
    - Helm chart packaged and published
 
 4. **Result**: New version available within minutes at:
-   - Docker: `ghcr.io/runningman84/s3-resource-operator:1.0.1`
-   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.0.1`
+   - Docker: `ghcr.io/runningman84/s3-resource-operator:1.2.0`
+   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.2.0`
 
 ### Complete Automation Flow
 

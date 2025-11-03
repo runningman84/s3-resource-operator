@@ -7,7 +7,7 @@ module.exports = {
     [
       '@semantic-release/exec',
       {
-        prepareCmd: 'yq e -i \'.version = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.appVersion = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.image.tag = "${nextRelease.version}"\' helm/values.yaml && sed -i "s/--version [0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/--version ${nextRelease.version}/g" README.md',
+        prepareCmd: 'yq e -i \'.version = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.appVersion = "${nextRelease.version}"\' helm/Chart.yaml && yq e -i \'.image.tag = "${nextRelease.version}"\' helm/values.yaml && sed -i "s/--version [0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/--version ${nextRelease.version}/g" README.md && sed -i "s/gh release download v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/gh release download v${nextRelease.version}/g" README.md && sed -i "s/s3-resource-operator:[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/s3-resource-operator:${nextRelease.version}/g" README.md',
       },
     ],
     [
