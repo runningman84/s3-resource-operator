@@ -1,8 +1,10 @@
+"""Tests for MetricsServer health endpoints."""
+
 import pytest
 import threading
 import time
 import requests
-from src.main import MetricsServer
+from src.metrics import MetricsServer
 
 
 def test_health_endpoint():
@@ -10,10 +12,10 @@ def test_health_endpoint():
     # Start the metrics server
     server = MetricsServer(port=8001)
     server.start()
-    
+
     # Give the server a moment to start
     time.sleep(0.5)
-    
+
     try:
         # Test the health endpoint
         response = requests.get('http://localhost:8001/healthz')
@@ -30,10 +32,10 @@ def test_metrics_endpoint_still_works():
     # Start the metrics server
     server = MetricsServer(port=8002)
     server.start()
-    
+
     # Give the server a moment to start
     time.sleep(0.5)
-    
+
     try:
         # Test the metrics endpoint
         response = requests.get('http://localhost:8002/metrics')
@@ -51,10 +53,10 @@ def test_404_for_unknown_path():
     # Start the metrics server
     server = MetricsServer(port=8003)
     server.start()
-    
+
     # Give the server a moment to start
     time.sleep(0.5)
-    
+
     try:
         # Test an unknown path
         response = requests.get('http://localhost:8003/unknown')

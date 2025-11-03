@@ -6,7 +6,8 @@ import botocore.awsrequest
 import botocore.credentials
 import requests
 
-logger = logging.getLogger("s3-resource-operator.utils")
+logger = logging.getLogger("s3-resource-operator")
+
 
 def sign_v4_request(method, url, region, service, access_key, secret_key, payload_bytes, headers=None):
     """
@@ -42,6 +43,7 @@ def sign_v4_request(method, url, region, service, access_key, secret_key, payloa
 
     return aws_request
 
+
 def send_signed_request(signed_request):
     """
     Sends a pre-signed AWSRequest object using the requests library.
@@ -55,9 +57,25 @@ def send_signed_request(signed_request):
         )
         return response
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to send signed request to {signed_request.url}: {e}")
+        logger.error(
+            f"Failed to send signed request to {signed_request.url}: {e}")
         # Return a mock response to prevent callers from crashing
         response = requests.Response()
         response.status_code = 500
         response.reason = str(e)
         return response
+
+
+def get_k8s_api():
+    """Initialize and return Kubernetes API client."""
+    from kubernetes import client, config
+
+    # Load kube config
+    try:
+        config.load_incluster_config()
+        logger.info("Loaded in-cluster kube config.")
+    except config.ConfigException:
+        logger.info(
+            "Could not load in-cluster config. Falling back to local kube config.")
+        config.load_kube_config()
+    return client.CoreV1Api()
