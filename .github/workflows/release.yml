@@ -19,6 +19,9 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     needs: test
+    outputs:
+      release_created: ${{ steps.semantic-release.outputs.release_created }}
+      version: ${{ steps.semantic-release.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -55,8 +58,12 @@ jobs:
             echo "ℹ️ No release created (no releasable commits)"
           fi
 
-      - name: Trigger publish workflow
-        if: steps.semantic-release.outputs.release_created == 'true'
-        uses: ./.github/workflows/publish.yml
-        with:
-          tag: ${{ steps.semantic-release.outputs.version }}
+  publish:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: ${{ needs.release.outputs.version }}
+    permissions:
+      contents: write
+      packages: write
