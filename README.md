@@ -29,6 +29,8 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 - **Helm Chart**: Comes with a Helm chart for easy deployment via OCI registry.
 - **Multi-Architecture Support**: Docker images built for both AMD64 and ARM64 architectures (including Apple Silicon, AWS Graviton).
 - **Automated Releases**: Semantic versioning and automated releases using Conventional Commits.
+- **SBOM Generation**: Comprehensive Software Bill of Materials (SBOM) in SPDX and CycloneDX formats for supply chain security.
+- **Vulnerability Scanning**: Automated security scanning with detailed reports for every release.
 
 ## Prerequisites
 
@@ -175,28 +177,39 @@ This project uses GitHub Actions for continuous integration and deployment with 
 
 1. **Test** (`.github/workflows/test.yml`)
    - Runs on: Push to `develop` branch and all pull requests
-   - Executes: Python tests, Helm chart validation, Docker build verification
-   - Validates: Commit message format using commitlint
+   - Executes: Python tests, Helm chart validation, Docker build verification, Trivy security scan
+   - Can be: Called by other workflows (`workflow_call`) or run manually
 
-2. **Release** (`.github/workflows/release.yml`)
+2. **Commit Validation** (`.github/workflows/commitlint.yml`)
+   - Runs on: All pull requests
+   - Validates: All commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format
+   - Posts: Helpful feedback on PRs if validation fails
+
+3. **Release** (`.github/workflows/release.yml`)
    - Runs on: Push to `main` branch
    - Flow:
-     - Runs full test suite first
+     - Calls test workflow (reuses `test.yml`)
      - Uses semantic-release to analyze commits
      - Automatically determines version bump (major/minor/patch)
      - Updates `CHANGELOG.md`, `helm/Chart.yaml`, and `helm/values.yaml`
      - Creates git tag and GitHub release
-     - **Automatically triggers the Build and Publish workflow**
+     - **Automatically calls the Build and Publish workflow**
    - Requirements: All commits must follow [Conventional Commits](https://www.conventionalcommits.org/) format
 
-3. **Build and Publish** (`.github/workflows/publish.yml`)
-   - Triggered by: Release workflow (automatically) or manual dispatch
+4. **Build and Publish** (`.github/workflows/publish.yml`)
+   - Triggered by: Release workflow (automatically via `workflow_call`)
+   - **Cannot be triggered manually** - Security measure to prevent accidental releases
    - Builds:
      - **Multi-architecture Docker images** using native runners:
-       - `linux/amd64` - Built on native x86_64 runners
-       - `linux/arm64` - Built on native ARM64 runners (fast, no emulation!)
+       - `linux/amd64` - Built natively on x86_64 runners (`ubuntu-24.04`)
+       - `linux/arm64` - Built natively on ARM64 runners (`ubuntu-24.04-arm`)
      - Publishes to: `ghcr.io/runningman84/s3-resource-operator`
      - Tags: `latest`, `1.0.1`, `1.0`, `1`
+   - **Security & Compliance**:
+     - Generates SBOMs for Docker images (SPDX & CycloneDX formats)
+     - Generates Python dependency SBOM
+     - Scans for vulnerabilities using Grype
+     - Uploads all SBOMs and scan reports to GitHub release
    - **Helm chart** package and publish to OCI registry
      - Publishes to: `oci://ghcr.io/runningman84/s3-resource-operator`
 
@@ -213,6 +226,62 @@ Docker automatically pulls the correct architecture for your platform:
 # Works on any architecture
 docker pull ghcr.io/runningman84/s3-resource-operator:latest
 ```
+
+### SBOM & Supply Chain Security
+
+Each release includes comprehensive Software Bill of Materials (SBOM) and vulnerability reports:
+
+#### SBOM Generation
+- **Docker Images**: SBOMs generated for both AMD64 and ARM64 platforms using [Syft](https://github.com/anchore/syft)
+  - Formats: SPDX and CycloneDX (JSON)
+  - Platform-specific SBOMs for detailed component tracking
+  - Combined SBOM for overall project view
+- **Python Dependencies**: Separate SBOM for all Python packages using cyclonedx-bom
+  - Includes all runtime and transitive dependencies
+  - CycloneDX format compatible with dependency tracking tools
+
+#### Vulnerability Scanning
+- **Automated Scanning**: Every release is scanned for known vulnerabilities using [Grype](https://github.com/anchore/grype)
+- **Multi-Platform**: Separate scans for AMD64 and ARM64 architectures
+- **Report Formats**:
+  - Human-readable table format for quick review
+  - JSON format for automation and integration
+  - SARIF format for GitHub Code Scanning integration
+- **Available as Release Assets**: All reports attached to GitHub releases
+
+#### Accessing Security Information
+
+All SBOM and vulnerability reports are attached to each GitHub release:
+
+```bash
+# Download SBOMs for a specific release
+gh release download v1.0.4 --pattern 'sbom-*.json'
+
+# Download vulnerability reports
+gh release download v1.0.4 --pattern 'vulnerability-report*'
+```
+
+**Files included with each release:**
+- `sbom-spdx.json` - Combined SBOM (SPDX format)
+- `sbom-cyclonedx.json` - Combined SBOM (CycloneDX format)
+- `sbom-amd64-spdx.json` - AMD64-specific SBOM
+- `sbom-amd64-cyclonedx.json` - AMD64-specific SBOM
+- `sbom-arm64-spdx.json` - ARM64-specific SBOM
+- `sbom-arm64-cyclonedx.json` - ARM64-specific SBOM
+- `sbom-python-cyclonedx.json` - Python dependencies SBOM
+- `vulnerability-report-amd64.txt` - AMD64 vulnerability scan (table)
+- `vulnerability-report-arm64.txt` - ARM64 vulnerability scan (table)
+- `vulnerability-report.json` - Vulnerability scan (JSON)
+- `vulnerability-report.sarif` - Vulnerability scan (SARIF)
+
+#### Integration with Security Tools
+
+The generated SBOMs and reports can be integrated with:
+- **Dependency Track**: Import CycloneDX SBOMs for continuous monitoring
+- **GitHub Dependency Graph**: SPDX format supported
+- **OWASP Dependency-Check**: Compatible with both formats
+- **Snyk, Anchore, Aqua**: Standard SBOM formats supported
+- **GitHub Code Scanning**: SARIF reports for vulnerability visibility
 
 ### Release Process
 
@@ -253,19 +322,26 @@ The release process is fully automated using semantic versioning:
 Developer Pushes to main
          ↓
    Release Workflow
-    ├─ Run Tests
+    ├─ Call Test Workflow (reuses test.yml)
+    │   ├─ Python tests
+    │   ├─ Helm validation
+    │   ├─ Docker build
+    │   └─ Trivy security scan
     ├─ Semantic Release
     │   ├─ Determine Version
     │   ├─ Update Files
     │   ├─ Create Tag
     │   └─ Create GitHub Release
-    └─ Trigger Publish Workflow
+    └─ Call Publish Workflow
          ↓
    Build and Publish Workflow
-    ├─ Build AMD64 Image (native)
-    ├─ Build ARM64 Image (native)
+    ├─ Build AMD64 Image (native ubuntu-24.04)
+    ├─ Build ARM64 Image (native ubuntu-24.04-arm)
     ├─ Create Multi-Arch Manifest
     ├─ Tag Images (version, major, latest)
+    ├─ Generate SBOMs (SPDX & CycloneDX)
+    ├─ Scan for Vulnerabilities (Grype)
+    ├─ Upload SBOMs & Reports to Release
     └─ Package & Publish Helm Chart
          ↓
    🎉 Release Complete!

@@ -1,9 +1,7 @@
 name: Build and Publish
 
 on:
-  release:
-    types: [published, created]
-  workflow_dispatch:
+  workflow_call:
     inputs:
       tag:
         description: 'Tag to publish (e.g., v1.0.1)'
@@ -22,7 +20,7 @@ jobs:
           - runner: ubuntu-24.04
             platform: linux/amd64
             arch: amd64
-          - runner: ubuntu-24.04
+          - runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
     runs-on: ${{ matrix.runner }}
@@ -30,11 +28,7 @@ jobs:
       - name: Determine tag
         id: tag
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${{ github.event.release.tag_name }}"
-          fi
+          TAG="${{ inputs.tag }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           # Extract version without 'v' prefix
           VERSION="${TAG#v}"
@@ -99,11 +93,7 @@ jobs:
       - name: Determine tag
         id: tag
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${{ github.event.release.tag_name }}"
-          fi
+          TAG="${{ inputs.tag }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           # Extract version without 'v' prefix
           VERSION="${TAG#v}"
@@ -178,13 +168,142 @@ jobs:
       - name: Docker build summary
         run: |
           echo "✅ Multi-architecture Docker image built and pushed successfully!"
-          echo "Architectures: linux/amd64 (native), linux/arm64 (native)"
+          echo "Architectures: linux/amd64 (ubuntu-24.04), linux/arm64 (ubuntu-24.04-arm)"
           echo "Tags:"
           echo "${{ steps.docker-tags.outputs.tags }}" | tr ' ' '\n' | sed 's/^/  - /'
 
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.version }}
+
+      - name: Install Syft for SBOM generation
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft version
+
+      - name: Install Grype for vulnerability scanning
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          grype version
+
+      - name: Generate SBOMs for multi-arch image
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          IMAGE="ghcr.io/${{ github.repository }}:${VERSION}"
+
+          echo "Generating SBOMs for ${IMAGE}"
+
+          # Generate SBOM for linux/amd64
+          echo "Generating SBOM for linux/amd64..."
+          syft packages "${IMAGE}" --platform linux/amd64 \
+            -o spdx-json=sbom-amd64-spdx.json \
+            -o cyclonedx-json=sbom-amd64-cyclonedx.json
+
+          # Generate SBOM for linux/arm64
+          echo "Generating SBOM for linux/arm64..."
+          syft packages "${IMAGE}" --platform linux/arm64 \
+            -o spdx-json=sbom-arm64-spdx.json \
+            -o cyclonedx-json=sbom-arm64-cyclonedx.json
+
+          # Generate combined SBOM (uses default platform)
+          echo "Generating combined SBOM..."
+          syft packages "${IMAGE}" \
+            -o spdx-json=sbom-spdx.json \
+            -o cyclonedx-json=sbom-cyclonedx.json
+
+          echo "✅ SBOMs generated successfully"
+          ls -lh sbom-*.json
+
+      - name: Generate Python dependency SBOM
+        run: |
+          pip install cyclonedx-bom
+          cyclonedx-py \
+            --requirements requirements.txt \
+            --output sbom-python-cyclonedx.json \
+            --format json
+          echo "✅ Python SBOM generated"
+
+      - name: Scan for vulnerabilities
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          IMAGE="ghcr.io/${{ github.repository }}:${VERSION}"
+
+          echo "Scanning ${IMAGE} for vulnerabilities..."
+
+          # Scan and generate reports (don't fail on vulnerabilities, just report)
+          grype "${IMAGE}" --platform linux/amd64 -o table > vulnerability-report-amd64.txt || true
+          grype "${IMAGE}" --platform linux/arm64 -o table > vulnerability-report-arm64.txt || true
+          grype "${IMAGE}" -o json > vulnerability-report.json || true
+          grype "${IMAGE}" -o sarif > vulnerability-report.sarif || true
+
+          echo "✅ Vulnerability scanning completed"
+
+          # Display summary
+          echo "## Vulnerability Summary (AMD64):"
+          head -n 50 vulnerability-report-amd64.txt || echo "No vulnerabilities found"
+
+      - name: Upload vulnerability reports to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          echo "Uploading vulnerability reports to release ${TAG}"
+
+          gh release upload "${TAG}" \
+            vulnerability-report-amd64.txt \
+            vulnerability-report-arm64.txt \
+            vulnerability-report.json \
+            vulnerability-report.sarif \
+            --clobber
+
+          echo "✅ Vulnerability reports uploaded to release"
+
+      - name: Upload SBOMs to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          echo "Uploading SBOMs to release ${TAG}"
+
+          gh release upload "${TAG}" \
+            sbom-spdx.json \
+            sbom-cyclonedx.json \
+            sbom-amd64-spdx.json \
+            sbom-amd64-cyclonedx.json \
+            sbom-arm64-spdx.json \
+            sbom-arm64-cyclonedx.json \
+            sbom-python-cyclonedx.json \
+            --clobber
+
+          echo "✅ SBOMs uploaded to release"
+
+      - name: SBOM Summary
+        run: |
+          echo "## 📋 SBOM & Security Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Generated SBOMs for version \`${{ steps.tag.outputs.version }}\`:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Image SBOMs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Combined**: SPDX and CycloneDX formats" >> $GITHUB_STEP_SUMMARY
+          echo "- **AMD64**: Platform-specific SPDX and CycloneDX" >> $GITHUB_STEP_SUMMARY
+          echo "- **ARM64**: Platform-specific SPDX and CycloneDX" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Python Dependencies SBOM" >> $GITHUB_STEP_SUMMARY
+          echo "- CycloneDX format for all Python dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Vulnerability Scanning" >> $GITHUB_STEP_SUMMARY
+          echo "- Scanned with Grype for both AMD64 and ARM64 platforms" >> $GITHUB_STEP_SUMMARY
+          echo "- Reports available in multiple formats (table, JSON, SARIF)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### SBOM Files" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -lh sbom-*.json >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Vulnerability Reports" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -lh vulnerability-report* >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Set up Helm
         uses: azure/setup-helm@v3
