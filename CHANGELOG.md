@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/runningman84/s3-resource-operator/compare/v1.2.0...v1.2.1) (2025-11-03)
+
+
+### Bug Fixes
+
+* remove cyclonedx ([0ea3d24](https://github.com/runningman84/s3-resource-operator/commit/0ea3d247e5eb33b07c0a74d947346f60e63d7cc9))
+
 # [1.2.0](https://github.com/runningman84/s3-resource-operator/compare/v1.1.0...v1.2.0) (2025-11-03)
 
 
