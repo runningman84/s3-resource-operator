@@ -214,15 +214,6 @@ jobs:
           echo "✅ SBOMs generated successfully"
           ls -lh sbom-*.json
 
-      - name: Generate Python dependency SBOM
-        run: |
-          pip install cyclonedx-bom
-          cyclonedx-py \
-            --requirements requirements.txt \
-            --output sbom-python-cyclonedx.json \
-            --format json
-          echo "✅ Python SBOM generated"
-
       - name: Scan for vulnerabilities
         run: |
           VERSION="${{ steps.tag.outputs.version }}"
@@ -272,7 +263,6 @@ jobs:
             sbom-amd64-cyclonedx.json \
             sbom-arm64-spdx.json \
             sbom-arm64-cyclonedx.json \
-            sbom-python-cyclonedx.json \
             --clobber
 
           echo "✅ SBOMs uploaded to release"
@@ -284,12 +274,9 @@ jobs:
           echo "Generated SBOMs for version \`${{ steps.tag.outputs.version }}\`:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Docker Image SBOMs" >> $GITHUB_STEP_SUMMARY
-          echo "- **Combined**: SPDX and CycloneDX formats" >> $GITHUB_STEP_SUMMARY
+          echo "- **Combined**: SPDX and CycloneDX formats (includes all OS packages, Python packages, and system libraries)" >> $GITHUB_STEP_SUMMARY
           echo "- **AMD64**: Platform-specific SPDX and CycloneDX" >> $GITHUB_STEP_SUMMARY
           echo "- **ARM64**: Platform-specific SPDX and CycloneDX" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Python Dependencies SBOM" >> $GITHUB_STEP_SUMMARY
-          echo "- CycloneDX format for all Python dependencies" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Vulnerability Scanning" >> $GITHUB_STEP_SUMMARY
           echo "- Scanned with Grype for both AMD64 and ARM64 platforms" >> $GITHUB_STEP_SUMMARY
