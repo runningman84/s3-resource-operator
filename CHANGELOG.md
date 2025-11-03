@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/runningman84/s3-resource-operator/compare/v1.0.5...v1.1.0) (2025-11-03)
+
+
+### Features
+
+* improve jobs and added SBOMs and use arm runners again ([6f8ca54](https://github.com/runningman84/s3-resource-operator/commit/6f8ca5470f3f6663bc5c58728669fc0d02d46110))
+
 ## [1.0.5](https://github.com/runningman84/s3-resource-operator/compare/v1.0.4...v1.0.5) (2025-11-02)
 
 
