@@ -2,7 +2,12 @@
 
 import pytest
 from unittest.mock import MagicMock
-from src.operator import Operator
+from src.operator import (
+    Operator,
+    USERS_CREATED,
+    BUCKETS_CREATED,
+    BUCKET_OWNERS_CHANGED
+)
 import base64
 
 
@@ -43,6 +48,10 @@ def test_handle_secret_creation(kube_client, versitygw_client):
     # Create a mock secret object
     mock_secret = create_mock_secret("new-secret", "default", {}, secret_data)
 
+    # Get initial metric values
+    initial_buckets_created = BUCKETS_CREATED._value.get()
+    initial_users_created = USERS_CREATED._value.get()
+
     # Handle the secret
     op.handle_secret(mock_secret)
 
@@ -52,6 +61,10 @@ def test_handle_secret_creation(kube_client, versitygw_client):
         "new-bucket", owner="new-user")
     backend.user_exists.assert_called_once_with("new-user")
     backend.create_user.assert_called_once()
+
+    # Verify metrics were incremented
+    assert BUCKETS_CREATED._value.get() == initial_buckets_created + 1
+    assert USERS_CREATED._value.get() == initial_users_created + 1
 
 
 def test_handle_secret_existing_resources(kube_client, versitygw_client):
@@ -104,7 +117,13 @@ def test_handle_secret_change_owner(kube_client, versitygw_client):
     mock_secret = create_mock_secret(
         "owner-change-secret", "default", {}, secret_data)
 
+    # Get initial metric value
+    initial_owners_changed = BUCKET_OWNERS_CHANGED._value.get()
+
     op.handle_secret(mock_secret)
 
     backend.change_bucket_owner.assert_called_once_with(
         "existing-bucket", "new-owner")
+
+    # Verify metric was incremented
+    assert BUCKET_OWNERS_CHANGED._value.get() == initial_owners_changed + 1

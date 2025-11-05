@@ -68,27 +68,37 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 operator:
+  # -- Log level for the operator (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  logLevel: "INFO"
+
   # Annotation key for secrets to be processed by the operator
   # -- The annotation key to look for on secrets.
   annotation_key: "s3-resource-operator.io/enabled"
+
   # S3 backend to use
   backend_name: "versitygw"
+
   # Secret management for the operator's own S3 credentials.
   # These are the credentials the operator uses to connect to the S3 endpoint.
   secret:
-    # Set to true to create a new secret with the credentials below.
+    # -- Set to true to create a new secret with the credentials below.
+    # Set to false to use an existing secret (specify the name below).
     create: true
-    # If 'create' is false, you must specify the name of an existing secret containing
-    # the keys S3_ENDPOINT_URL, S3_ACCESS_KEY, and S3_SECRET_KEY.
-    # If 'create' is true and name is empty, a name will be generated.
+
+    # -- Name of the secret containing S3 credentials.
+    # If 'create' is true and name is empty, a name will be generated automatically.
+    # If 'create' is false, you MUST specify the name of an existing secret.
+    # The secret must contain the following keys: S3_ENDPOINT_URL, S3_ACCESS_KEY, S3_SECRET_KEY
     name: ""
-    # Data for the new secret (if create is true).
+
+    # -- Data for the new secret (only used if create is true).
     # The keys must be S3_ENDPOINT_URL, S3_ACCESS_KEY, and S3_SECRET_KEY.
     # Values will be base64-encoded automatically.
+    # Example:
+    #   S3_ENDPOINT_URL: "http://versitygw.default.svc.cluster.local:7070"
+    #   S3_ACCESS_KEY: "admin"
+    #   S3_SECRET_KEY: "your-secret-key"
     data: {}
-    #  S3_ENDPOINT_URL: "http://versitygw.default.svc.cluster.local:7070"
-    #  S3_ACCESS_KEY: "admin"
-    #  S3_SECRET_KEY: "your-secret-key"
 metrics:
   service:
     enabled: true

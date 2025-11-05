@@ -24,8 +24,8 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 - **Dynamic Reconfiguration**: Watches for changes to secrets and updates resources accordingly.
 - **Initial Sync**: On startup, the operator performs a full sync to ensure all declared resources are correctly configured.
 - **Graceful Shutdown**: Properly handles SIGTERM and SIGINT signals for clean shutdown in Kubernetes environments.
-- **Prometheus Metrics**: Exposes metrics on port 8000 for monitoring (secrets processed, errors, sync duration).
-- **Configurable**: All settings, including S3 endpoint and credentials, are configurable via environment variables.
+- **Prometheus Metrics**: Exposes comprehensive metrics on port 8000 for monitoring (secrets processed, errors, sync duration, resource operations).
+- **Configurable**: All settings, including S3 endpoint, credentials, and log level, are configurable via environment variables.
 - **Helm Chart**: Comes with a Helm chart for easy deployment via OCI registry.
 - **Multi-Architecture Support**: Docker images built for both AMD64 and ARM64 architectures (including Apple Silicon, AWS Graviton).
 - **Automated Releases**: Semantic versioning and automated releases using Conventional Commits.
@@ -43,34 +43,78 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 
 The operator is deployed using a Helm chart published to GitHub Container Registry (OCI).
 
-1.  **Install from OCI Registry**
+### Option 1: Install with inline credentials
 
-    Install the chart directly from the OCI registry:
+Install the chart directly from the OCI registry with credentials:
 
-    ```sh
-    helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
-          --version 1.3.1 \
-          --namespace s3-resource-operator \
-          --create-namespace \
-          --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-          --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
-          --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
-    ```
+```sh
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --version 1.3.1 \
+      --namespace s3-resource-operator \
+      --create-namespace \
+      --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+      --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
+      --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+```
 
-2.  **Alternative: Install from local chart**
+### Option 2: Use an existing secret
 
-    Or clone the repository and install locally:
+If you manage your S3 credentials externally (e.g., using External Secrets Operator, Sealed Secrets, or Vault), you can reference an existing secret:
 
-    ```sh
-    git clone https://github.com/runningman84/s3-resource-operator.git
-    cd s3-resource-operator
-    helm install s3-resource-operator ./helm \
-          --namespace s3-resource-operator \
-          --create-namespace \
-          --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-          --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
-          --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
-    ```
+```sh
+# First, create your secret (example using kubectl)
+kubectl create secret generic my-s3-credentials \
+  --namespace s3-resource-operator \
+  --from-literal=S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+  --from-literal=S3_ACCESS_KEY="<your-admin-access-key>" \
+  --from-literal=S3_SECRET_KEY="<your-admin-secret-key>"
+
+# Install the chart referencing the existing secret
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --version 1.3.1 \
+      --namespace s3-resource-operator \
+      --create-namespace \
+      --set operator.secret.create=false \
+      --set operator.secret.name="my-s3-credentials"
+```
+
+> **Note:** When `operator.secret.create=false`, you **must** provide `operator.secret.name`. The chart will fail validation if the secret name is not specified.
+
+### Option 3: Install from local chart
+
+Or clone the repository and install locally:
+
+```sh
+git clone https://github.com/runningman84/s3-resource-operator.git
+cd s3-resource-operator
+helm install s3-resource-operator ./helm \
+      --namespace s3-resource-operator \
+      --create-namespace \
+      --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+      --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
+      --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+```
+
+### Configuration Options
+
+You can customize the operator behavior using Helm values:
+
+```sh
+# Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --set operator.logLevel="DEBUG" \
+      ...
+
+# Use a different S3 backend
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --set operator.backend_name="minio" \
+      ...
+
+# Change the annotation key
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --set operator.annotation_key="my-custom-annotation/enabled" \
+      ...
+```
 
 ## Usage
 
@@ -156,6 +200,7 @@ To run the operator locally for development, you need Python 3.12+ and the requi
 
     ```sh
     export KUBECONFIG=~/.kube/config
+    export LOG_LEVEL="INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
     export S3_ENDPOINT_URL="http://<your-s3-endpoint>"
     export S3_ACCESS_KEY="<your-admin-access-key>"
     export S3_SECRET_KEY="<your-admin-secret-key>"
@@ -207,6 +252,11 @@ src/
   - `s3_operator_errors_total`
   - `s3_operator_sync_duration_seconds`
   - `s3_operator_handle_secret_duration_seconds`
+  - `s3_operator_users_created_total`
+  - `s3_operator_users_deleted_total`
+  - `s3_operator_users_updated_total`
+  - `s3_operator_buckets_created_total`
+  - `s3_operator_bucket_owners_changed_total`
 
 #### `secrets.py` - Secret Management
 - **SecretManager class**: Kubernetes secret operations
@@ -508,6 +558,11 @@ curl http://localhost:8000/healthz
   - `s3_operator_errors_total`: Total number of errors encountered
   - `s3_operator_sync_duration_seconds`: Duration of sync cycles (histogram)
   - `s3_operator_handle_secret_duration_seconds`: Duration of handling individual secrets (histogram)
+  - `s3_operator_users_created_total`: Total number of IAM users created
+  - `s3_operator_users_deleted_total`: Total number of IAM users deleted
+  - `s3_operator_users_updated_total`: Total number of IAM users updated
+  - `s3_operator_buckets_created_total`: Total number of S3 buckets created
+  - `s3_operator_bucket_owners_changed_total`: Total number of bucket owners changed
 
 To access metrics:
 ```sh

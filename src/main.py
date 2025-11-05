@@ -20,17 +20,24 @@ def main():
     # Load environment variables from .env file
     load_dotenv()
 
+    # Get log level from environment variable (default to INFO)
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    if log_level not in valid_log_levels:
+        log_level = "INFO"
+
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, log_level),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
     # Start up the server to expose the metrics.
     metrics_server = MetricsServer(port=8000)
     metrics_server.start()
 
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-
     logger.info("Prometheus metrics server started on port 8000.")
+    logger.info(f"Log level set to: {log_level}")
 
     annotation_key = os.environ.get(
         "ANNOTATION_KEY", "s3-resource-operator.io/enabled")

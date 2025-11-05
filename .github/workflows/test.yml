@@ -38,7 +38,17 @@ jobs:
           version: 'v3.13.2'
 
       - name: Test Helm chart
-        run: helm template ./helm --debug
+        run: |
+          helm template ./helm --debug \
+            --set operator.secret.data.S3_ENDPOINT_URL="http://test-endpoint:7070" \
+            --set operator.secret.data.S3_ACCESS_KEY="test-access-key" \
+            --set operator.secret.data.S3_SECRET_KEY="test-secret-key"
+
+      - name: Test Helm chart with existing secret
+        run: |
+          helm template ./helm --debug \
+            --set operator.secret.create=false \
+            --set operator.secret.name="my-existing-secret"
 
       - name: Build image
         id: build-image
