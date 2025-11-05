@@ -20,6 +20,18 @@ SYNC_DURATION = Histogram(
 HANDLE_SECRET_DURATION = Histogram(
     's3_operator_handle_secret_duration_seconds', 'Duration of handling a secret')
 
+# Resource operation metrics
+USERS_CREATED = Counter('s3_operator_users_created_total',
+                        'Total number of users created')
+USERS_DELETED = Counter('s3_operator_users_deleted_total',
+                        'Total number of users deleted')
+USERS_UPDATED = Counter('s3_operator_users_updated_total',
+                        'Total number of users updated')
+BUCKETS_CREATED = Counter(
+    's3_operator_buckets_created_total', 'Total number of buckets created')
+BUCKET_OWNERS_CHANGED = Counter(
+    's3_operator_bucket_owners_changed_total', 'Total number of bucket owners changed')
+
 
 class Operator:
     """Main operator that watches secrets and manages S3 resources."""
@@ -79,6 +91,7 @@ class Operator:
         if not self.backend.bucket_exists(bucket_name):
             logger.info(f"Creating S3 bucket '{bucket_name}'.")
             self.backend.create_bucket(bucket_name, owner=access_key)
+            BUCKETS_CREATED.inc()
         else:
             logger.info(f"S3 bucket '{bucket_name}' already exists.")
             owner = self.backend.get_bucket_owner(bucket_name)
@@ -89,6 +102,7 @@ class Operator:
                 logger.info(
                     f"Changing owner of bucket '{bucket_name}' to '{access_key}'.")
                 self.backend.change_bucket_owner(bucket_name, access_key)
+                BUCKET_OWNERS_CHANGED.inc()
             else:
                 logger.info(
                     f"S3 bucket '{bucket_name}' is already owned by '{access_key}'.")
@@ -102,6 +116,7 @@ class Operator:
                 user_id=secret_data.get('user-id'),
                 group_id=secret_data.get('group-id')
             )
+            USERS_CREATED.inc()
         else:
             logger.info(
                 f"IAM user '{access_key}' already exists. Skipping creation.")
