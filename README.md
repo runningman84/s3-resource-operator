@@ -49,7 +49,7 @@ The operator is deployed using a Helm chart published to GitHub Container Regist
 
     ```sh
     helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
-          --version 1.3.0 \
+          --version 1.3.1 \
           --namespace s3-resource-operator \
           --create-namespace \
           --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
@@ -365,10 +365,10 @@ All SBOM and vulnerability reports are attached to each GitHub release:
 
 ```bash
 # Download SBOMs for a specific release
-gh release download v1.2.0 --pattern 'sbom-*.json'
+gh release download v1.3.1 --pattern 'sbom-*.json'
 
 # Download vulnerability reports
-gh release download v1.2.0 --pattern 'vulnerability-report*'
+gh release download v1.3.1 --pattern 'vulnerability-report*'
 ```
 
 **Files included with each release:**
@@ -421,8 +421,8 @@ The release process is fully automated using semantic versioning:
    - Helm chart packaged and published
 
 4. **Result**: New version available within minutes at:
-   - Docker: `ghcr.io/runningman84/s3-resource-operator:1.2.0`
-   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.2.0`
+   - Docker: `ghcr.io/runningman84/s3-resource-operator:1.3.1`
+   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.3.1`
 
 
 ### Complete Automation Flow
