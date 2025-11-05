@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/runningman84/s3-resource-operator/compare/v1.4.0...v1.5.0) (2025-11-05)
+
+
+### Features
+
+* publish chart in own subfolder ([37ab0c2](https://github.com/runningman84/s3-resource-operator/commit/37ab0c2e6afc068e4fb68d445adc91e27ce3a5ee))
+
 # [1.4.0](https://github.com/runningman84/s3-resource-operator/compare/v1.3.1...v1.4.0) (2025-11-05)
 
 
