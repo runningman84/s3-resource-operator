@@ -24,8 +24,8 @@ def test_load_dotenv():
 
         # Set up required environment variables
         os.environ['S3_ENDPOINT_URL'] = 'http://test:9000'
-        os.environ['S3_ACCESS_KEY'] = 'test-key'
-        os.environ['S3_SECRET_KEY'] = 'test-secret'
+        os.environ['ROOT_ACCESS_KEY'] = 'test-key'
+        os.environ['ROOT_SECRET_KEY'] = 'test-secret'
         os.environ['BACKEND_NAME'] = 'versitygw'
 
         # Mock the operator instance
@@ -45,8 +45,8 @@ def test_load_dotenv():
 
         # Clean up environment variables
         del os.environ['S3_ENDPOINT_URL']
-        del os.environ['S3_ACCESS_KEY']
-        del os.environ['S3_SECRET_KEY']
+        del os.environ['ROOT_ACCESS_KEY']
+        del os.environ['ROOT_SECRET_KEY']
         del os.environ['BACKEND_NAME']
 
     del os.environ['TEST_MODE']
