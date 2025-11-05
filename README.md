@@ -78,6 +78,8 @@ helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operato
       --set operator.secret.name="my-s3-credentials"
 ```
 
+> **Note:** When `operator.secret.create=false`, you **must** provide `operator.secret.name`. The chart will fail validation if the secret name is not specified.
+
 ### Option 3: Install from local chart
 
 Or clone the repository and install locally:
@@ -91,6 +93,27 @@ helm install s3-resource-operator ./helm \
       --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
       --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
       --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+```
+
+### Configuration Options
+
+You can customize the operator behavior using Helm values:
+
+```sh
+# Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --set operator.logLevel="DEBUG" \
+      ...
+
+# Use a different S3 backend
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --set operator.backend_name="minio" \
+      ...
+
+# Change the annotation key
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --set operator.annotation_key="my-custom-annotation/enabled" \
+      ...
 ```
 
 ## Usage
@@ -177,6 +200,7 @@ To run the operator locally for development, you need Python 3.12+ and the requi
 
     ```sh
     export KUBECONFIG=~/.kube/config
+    export LOG_LEVEL="INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
     export S3_ENDPOINT_URL="http://<your-s3-endpoint>"
     export S3_ACCESS_KEY="<your-admin-access-key>"
     export S3_SECRET_KEY="<your-admin-secret-key>"

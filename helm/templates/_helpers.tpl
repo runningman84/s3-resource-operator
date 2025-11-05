@@ -68,6 +68,9 @@ Create the name of the secret to use
 {{- if .Values.operator.secret.create }}
 {{- default (include "s3-resource-operator.fullname" .) .Values.operator.secret.name }}
 {{- else }}
+{{- if not .Values.operator.secret.name }}
+{{- fail "operator.secret.name must be provided when operator.secret.create is false" }}
+{{- end }}
 {{- .Values.operator.secret.name }}
 {{- end }}
 {{- end }}
