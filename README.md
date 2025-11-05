@@ -101,17 +101,17 @@ You can customize the operator behavior using Helm values:
 
 ```sh
 # Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --set operator.logLevel="DEBUG" \
       ...
 
 # Use a different S3 backend
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --set operator.backend_name="minio" \
       ...
 
 # Change the annotation key
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --set operator.annotation_key="my-custom-annotation/enabled" \
       ...
 ```
@@ -352,7 +352,7 @@ This project uses GitHub Actions for continuous integration and deployment with 
      - Scans for vulnerabilities using Grype
      - Uploads all SBOMs and scan reports to GitHub release
    - **Helm chart** package and publish to OCI registry
-     - Publishes to: `oci://ghcr.io/runningman84/s3-resource-operator`
+     - Publishes to: `oci://ghcr.io/runningman84/charts/s3-resource-operator`
 
 5. **Sync Main to Develop** (`.github/workflows/sync.yml`)
    - Runs on: Push to `main` branch (after releases)

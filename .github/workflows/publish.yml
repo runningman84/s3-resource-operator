@@ -324,5 +324,5 @@ jobs:
           CHART_FILE="${{ steps.helm-package.outputs.chart_path }}"
           CHART_VERSION="${{ steps.helm-package.outputs.chart_version }}"
           echo "Pushing Helm chart: $CHART_FILE (version: $CHART_VERSION)"
-          helm push $CHART_FILE oci://ghcr.io/${{ github.repository_owner }}
-          echo "Successfully pushed to: oci://ghcr.io/${{ github.repository_owner }}/s3-resource-operator:$CHART_VERSION"
+          helm push $CHART_FILE oci://ghcr.io/${{ github.repository_owner }}/charts
+          echo "Successfully pushed to: oci://ghcr.io/${{ github.repository_owner }}/charts/s3-resource-operator:$CHART_VERSION"
