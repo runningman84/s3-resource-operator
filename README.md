@@ -48,7 +48,7 @@ The operator is deployed using a Helm chart published to GitHub Container Regist
 Install the chart directly from the OCI registry with credentials:
 
 ```sh
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --version 1.3.1 \
       --namespace s3-resource-operator \
       --create-namespace \
@@ -70,7 +70,7 @@ kubectl create secret generic my-s3-credentials \
   --from-literal=S3_SECRET_KEY="<your-admin-secret-key>"
 
 # Install the chart referencing the existing secret
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --version 1.3.1 \
       --namespace s3-resource-operator \
       --create-namespace \
@@ -101,17 +101,17 @@ You can customize the operator behavior using Helm values:
 
 ```sh
 # Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --set operator.logLevel="DEBUG" \
       ...
 
 # Use a different S3 backend
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --set operator.backend_name="minio" \
       ...
 
 # Change the annotation key
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --set operator.annotation_key="my-custom-annotation/enabled" \
       ...
 ```
@@ -352,7 +352,7 @@ This project uses GitHub Actions for continuous integration and deployment with 
      - Scans for vulnerabilities using Grype
      - Uploads all SBOMs and scan reports to GitHub release
    - **Helm chart** package and publish to OCI registry
-     - Publishes to: `oci://ghcr.io/runningman84/s3-resource-operator`
+     - Publishes to: `oci://ghcr.io/runningman84/charts/s3-resource-operator`
 
 5. **Sync Main to Develop** (`.github/workflows/sync.yml`)
    - Runs on: Push to `main` branch (after releases)
@@ -472,7 +472,7 @@ The release process is fully automated using semantic versioning:
 
 4. **Result**: New version available within minutes at:
    - Docker: `ghcr.io/runningman84/s3-resource-operator:1.3.1`
-   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.3.1`
+   - Helm: `oci://ghcr.io/runningman84/charts/s3-resource-operator --version 1.3.1`
 
 
 ### Complete Automation Flow
