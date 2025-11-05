@@ -24,8 +24,8 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 - **Dynamic Reconfiguration**: Watches for changes to secrets and updates resources accordingly.
 - **Initial Sync**: On startup, the operator performs a full sync to ensure all declared resources are correctly configured.
 - **Graceful Shutdown**: Properly handles SIGTERM and SIGINT signals for clean shutdown in Kubernetes environments.
-- **Prometheus Metrics**: Exposes metrics on port 8000 for monitoring (secrets processed, errors, sync duration).
-- **Configurable**: All settings, including S3 endpoint and credentials, are configurable via environment variables.
+- **Prometheus Metrics**: Exposes comprehensive metrics on port 8000 for monitoring (secrets processed, errors, sync duration, resource operations).
+- **Configurable**: All settings, including S3 endpoint, credentials, and log level, are configurable via environment variables.
 - **Helm Chart**: Comes with a Helm chart for easy deployment via OCI registry.
 - **Multi-Architecture Support**: Docker images built for both AMD64 and ARM64 architectures (including Apple Silicon, AWS Graviton).
 - **Automated Releases**: Semantic versioning and automated releases using Conventional Commits.
@@ -252,6 +252,11 @@ src/
   - `s3_operator_errors_total`
   - `s3_operator_sync_duration_seconds`
   - `s3_operator_handle_secret_duration_seconds`
+  - `s3_operator_users_created_total`
+  - `s3_operator_users_deleted_total`
+  - `s3_operator_users_updated_total`
+  - `s3_operator_buckets_created_total`
+  - `s3_operator_bucket_owners_changed_total`
 
 #### `secrets.py` - Secret Management
 - **SecretManager class**: Kubernetes secret operations
@@ -553,6 +558,11 @@ curl http://localhost:8000/healthz
   - `s3_operator_errors_total`: Total number of errors encountered
   - `s3_operator_sync_duration_seconds`: Duration of sync cycles (histogram)
   - `s3_operator_handle_secret_duration_seconds`: Duration of handling individual secrets (histogram)
+  - `s3_operator_users_created_total`: Total number of IAM users created
+  - `s3_operator_users_deleted_total`: Total number of IAM users deleted
+  - `s3_operator_users_updated_total`: Total number of IAM users updated
+  - `s3_operator_buckets_created_total`: Total number of S3 buckets created
+  - `s3_operator_bucket_owners_changed_total`: Total number of bucket owners changed
 
 To access metrics:
 ```sh
