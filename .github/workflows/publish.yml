@@ -195,19 +195,19 @@ jobs:
 
           # Generate SBOM for linux/amd64
           echo "Generating SBOM for linux/amd64..."
-          syft packages "${IMAGE}" --platform linux/amd64 \
+          syft scan "${IMAGE}" --platform linux/amd64 \
             -o spdx-json=sbom-amd64-spdx.json \
             -o cyclonedx-json=sbom-amd64-cyclonedx.json
 
           # Generate SBOM for linux/arm64
           echo "Generating SBOM for linux/arm64..."
-          syft packages "${IMAGE}" --platform linux/arm64 \
+          syft scan "${IMAGE}" --platform linux/arm64 \
             -o spdx-json=sbom-arm64-spdx.json \
             -o cyclonedx-json=sbom-arm64-cyclonedx.json
 
           # Generate combined SBOM (uses default platform)
           echo "Generating combined SBOM..."
-          syft packages "${IMAGE}" \
+          syft scan "${IMAGE}" \
             -o spdx-json=sbom-spdx.json \
             -o cyclonedx-json=sbom-cyclonedx.json
 

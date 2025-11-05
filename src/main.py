@@ -42,15 +42,15 @@ def main():
     annotation_key = os.environ.get(
         "ANNOTATION_KEY", "s3-resource-operator.io/enabled")
     s3_endpoint_url = os.environ.get("S3_ENDPOINT_URL")
-    s3_access_key = os.environ.get("S3_ACCESS_KEY")
-    s3_secret_key = os.environ.get("S3_SECRET_KEY")
+    s3_access_key = os.environ.get("ROOT_ACCESS_KEY")
+    s3_secret_key = os.environ.get("ROOT_SECRET_KEY")
     backend_name = os.environ.get("BACKEND_NAME", "versitygw")
 
     required_env_vars = {
         "ANNOTATION_KEY": annotation_key,
         "S3_ENDPOINT_URL": s3_endpoint_url,
-        "S3_ACCESS_KEY": s3_access_key,
-        "S3_SECRET_KEY": s3_secret_key,
+        "ROOT_ACCESS_KEY": s3_access_key,
+        "ROOT_SECRET_KEY": s3_secret_key,
         "BACKEND_NAME": backend_name
     }
     missing_vars = [key for key,

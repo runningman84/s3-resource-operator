@@ -84,15 +84,15 @@ operator:
     # -- Name of the secret containing S3 credentials.
     # If 'create' is true and name is empty, a name will be generated automatically.
     # If 'create' is false, you MUST specify the name of an existing secret.
-    # The secret must contain the following keys: S3_ENDPOINT_URL, S3_ACCESS_KEY, S3_SECRET_KEY
+    # The secret must contain the following keys: S3_ENDPOINT_URL, ROOT_ACCESS_KEY, ROOT_SECRET_KEY
     name: ""
     # -- Data for the new secret (only used if create is true).
-    # The keys must be S3_ENDPOINT_URL, S3_ACCESS_KEY, and S3_SECRET_KEY.
+    # The keys must be S3_ENDPOINT_URL, ROOT_ACCESS_KEY, and ROOT_SECRET_KEY.
     # Values will be base64-encoded automatically.
     # Example:
     #   S3_ENDPOINT_URL: "http://versitygw.default.svc.cluster.local:7070"
-    #   S3_ACCESS_KEY: "admin"
-    #   S3_SECRET_KEY: "your-secret-key"
+    #   ROOT_ACCESS_KEY: "admin"
+    #   ROOT_SECRET_KEY: "your-secret-key"
     data: {}
 metrics:
   service:

@@ -53,8 +53,8 @@ helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operato
       --namespace s3-resource-operator \
       --create-namespace \
       --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-      --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
-      --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+      --set operator.secret.data.ROOT_ACCESS_KEY="<your-admin-access-key>" \
+      --set operator.secret.data.ROOT_SECRET_KEY="<your-admin-secret-key>"
 ```
 
 ### Option 2: Use an existing secret
@@ -66,8 +66,8 @@ If you manage your S3 credentials externally (e.g., using External Secrets Opera
 kubectl create secret generic my-s3-credentials \
   --namespace s3-resource-operator \
   --from-literal=S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-  --from-literal=S3_ACCESS_KEY="<your-admin-access-key>" \
-  --from-literal=S3_SECRET_KEY="<your-admin-secret-key>"
+  --from-literal=ROOT_ACCESS_KEY="<your-admin-access-key>" \
+  --from-literal=ROOT_SECRET_KEY="<your-admin-secret-key>"
 
 # Install the chart referencing the existing secret
 helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
@@ -91,8 +91,8 @@ helm install s3-resource-operator ./helm \
       --namespace s3-resource-operator \
       --create-namespace \
       --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-      --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
-      --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+      --set operator.secret.data.ROOT_ACCESS_KEY="<your-admin-access-key>" \
+      --set operator.secret.data.ROOT_SECRET_KEY="<your-admin-secret-key>"
 ```
 
 ### Configuration Options
@@ -202,8 +202,8 @@ To run the operator locally for development, you need Python 3.12+ and the requi
     export KUBECONFIG=~/.kube/config
     export LOG_LEVEL="INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
     export S3_ENDPOINT_URL="http://<your-s3-endpoint>"
-    export S3_ACCESS_KEY="<your-admin-access-key>"
-    export S3_SECRET_KEY="<your-admin-secret-key>"
+    export ROOT_ACCESS_KEY="<your-admin-access-key>"
+    export ROOT_SECRET_KEY="<your-admin-secret-key>"
     export ANNOTATION_KEY="s3-resource-operator.io/enabled"
     export BACKEND_NAME="versitygw"
     ```
@@ -533,8 +533,8 @@ The operator can be configured using the following environment variables:
 | ------------------------- | --------------------------------------------------------------------------- | ------------------------------ |
 | `ANNOTATION_KEY`          | The annotation key to look for on secrets.                                  | `s3-resource-operator.io/enabled` |
 | `S3_ENDPOINT_URL`         | The URL of the S3 endpoint.                                                 | (required)                     |
-| `S3_ACCESS_KEY`           | The access key for the S3 endpoint (for the operator itself).               | (required)                     |
-| `S3_SECRET_KEY`           | The secret key for the S3 endpoint (for the operator itself).               | (required)                     |
+| `ROOT_ACCESS_KEY`         | The root access key for the S3 endpoint (for the operator itself).          | (required)                     |
+| `ROOT_SECRET_KEY`         | The root secret key for the S3 endpoint (for the operator itself).          | (required)                     |
 | `BACKEND_NAME`            | The name of the S3 backend to use (`versitygw`, `minio`, `garage`).         | `versitygw`                    |
 
 ## Monitoring

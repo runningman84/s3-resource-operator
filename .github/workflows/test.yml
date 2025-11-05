@@ -41,8 +41,8 @@ jobs:
         run: |
           helm template ./helm --debug \
             --set operator.secret.data.S3_ENDPOINT_URL="http://test-endpoint:7070" \
-            --set operator.secret.data.S3_ACCESS_KEY="test-access-key" \
-            --set operator.secret.data.S3_SECRET_KEY="test-secret-key"
+            --set operator.secret.data.ROOT_ACCESS_KEY="test-access-key" \
+            --set operator.secret.data.ROOT_SECRET_KEY="test-secret-key"
 
       - name: Test Helm chart with existing secret
         run: |

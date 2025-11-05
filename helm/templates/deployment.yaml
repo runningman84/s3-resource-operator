@@ -63,16 +63,16 @@ spec:
                 secretKeyRef:
                   name: {{ include "s3-resource-operator.secretName" . }}
                   key: S3_ENDPOINT_URL
-            - name: S3_ACCESS_KEY
+            - name: ROOT_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "s3-resource-operator.secretName" . }}
-                  key: S3_ACCESS_KEY
-            - name: S3_SECRET_KEY
+                  key: ROOT_ACCESS_KEY
+            - name: ROOT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "s3-resource-operator.secretName" . }}
-                  key: S3_SECRET_KEY
+                  key: ROOT_SECRET_KEY
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
