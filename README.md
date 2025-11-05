@@ -43,34 +43,55 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 
 The operator is deployed using a Helm chart published to GitHub Container Registry (OCI).
 
-1.  **Install from OCI Registry**
+### Option 1: Install with inline credentials
 
-    Install the chart directly from the OCI registry:
+Install the chart directly from the OCI registry with credentials:
 
-    ```sh
-    helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
-          --version 1.3.0 \
-          --namespace s3-resource-operator \
-          --create-namespace \
-          --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-          --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
-          --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
-    ```
+```sh
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --version 1.3.1 \
+      --namespace s3-resource-operator \
+      --create-namespace \
+      --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+      --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
+      --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+```
 
-2.  **Alternative: Install from local chart**
+### Option 2: Use an existing secret
 
-    Or clone the repository and install locally:
+If you manage your S3 credentials externally (e.g., using External Secrets Operator, Sealed Secrets, or Vault), you can reference an existing secret:
 
-    ```sh
-    git clone https://github.com/runningman84/s3-resource-operator.git
-    cd s3-resource-operator
-    helm install s3-resource-operator ./helm \
-          --namespace s3-resource-operator \
-          --create-namespace \
-          --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
-          --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
-          --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
-    ```
+```sh
+# First, create your secret (example using kubectl)
+kubectl create secret generic my-s3-credentials \
+  --namespace s3-resource-operator \
+  --from-literal=S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+  --from-literal=S3_ACCESS_KEY="<your-admin-access-key>" \
+  --from-literal=S3_SECRET_KEY="<your-admin-secret-key>"
+
+# Install the chart referencing the existing secret
+helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+      --version 1.3.1 \
+      --namespace s3-resource-operator \
+      --create-namespace \
+      --set operator.secret.create=false \
+      --set operator.secret.name="my-s3-credentials"
+```
+
+### Option 3: Install from local chart
+
+Or clone the repository and install locally:
+
+```sh
+git clone https://github.com/runningman84/s3-resource-operator.git
+cd s3-resource-operator
+helm install s3-resource-operator ./helm \
+      --namespace s3-resource-operator \
+      --create-namespace \
+      --set operator.secret.data.S3_ENDPOINT_URL="http://<your-s3-service-endpoint>" \
+      --set operator.secret.data.S3_ACCESS_KEY="<your-admin-access-key>" \
+      --set operator.secret.data.S3_SECRET_KEY="<your-admin-secret-key>"
+```
 
 ## Usage
 
