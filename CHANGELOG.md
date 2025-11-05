@@ -1,3 +1,11 @@
+## [1.3.1](https://github.com/runningman84/s3-resource-operator/compare/v1.3.0...v1.3.1) (2025-11-05)
+
+
+### Bug Fixes
+
+* improve security ([e47c1a2](https://github.com/runningman84/s3-resource-operator/commit/e47c1a29f7242ec8683d89d54fb159b3f80cb002))
+* update readme ([7af258b](https://github.com/runningman84/s3-resource-operator/commit/7af258b3d9d87974b7995869ba78cd432cf9fb0d))
+
 # [1.3.0](https://github.com/runningman84/s3-resource-operator/compare/v1.2.1...v1.3.0) (2025-11-03)
 
 
