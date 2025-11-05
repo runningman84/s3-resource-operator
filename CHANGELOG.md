@@ -1,3 +1,21 @@
+# [1.4.0](https://github.com/runningman84/s3-resource-operator/compare/v1.3.1...v1.4.0) (2025-11-05)
+
+
+### Bug Fixes
+
+* correct version numbers in Readme ([a60b05f](https://github.com/runningman84/s3-resource-operator/commit/a60b05fd3e14ecdfdb421ee3cfa70e4b64a91d2c))
+* improve docs ([2f34798](https://github.com/runningman84/s3-resource-operator/commit/2f347981a900315418dab29a678883c12989792c))
+* improve tests ([e3e5803](https://github.com/runningman84/s3-resource-operator/commit/e3e5803153d8e2c7b07639f9b6e65c6554be5ecc))
+* release ([a71986f](https://github.com/runningman84/s3-resource-operator/commit/a71986f07050b7e13f650d8ebe092b324429714f))
+
+
+### Features
+
+* allow manual release ([741d4ef](https://github.com/runningman84/s3-resource-operator/commit/741d4ef4b6b0d73d94b0211d58eb6f8381ee9c43))
+* improve helm chart and added logging level ([ccca20f](https://github.com/runningman84/s3-resource-operator/commit/ccca20f3dd77b2accbe7139e43dfbadcec1c358f))
+* improve logging ([84f18c4](https://github.com/runningman84/s3-resource-operator/commit/84f18c40189d0f6a9551d372dc6559c33f0ac409))
+* proper metric names ([3da534e](https://github.com/runningman84/s3-resource-operator/commit/3da534e018feee461dd17ca6dfe11b0b1ed79800))
+
 ## [1.3.1](https://github.com/runningman84/s3-resource-operator/compare/v1.3.0...v1.3.1) (2025-11-05)
 
 
