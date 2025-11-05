@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/runningman84/s3-resource-operator/compare/v1.5.0...v1.6.0) (2025-11-05)
+
+
+### Features
+
+* use same envs as versitygw ([a96e21b](https://github.com/runningman84/s3-resource-operator/commit/a96e21bf121f17494bdeb4d8b31f0bd34391862c))
+
 # [1.5.0](https://github.com/runningman84/s3-resource-operator/compare/v1.4.0...v1.5.0) (2025-11-05)
 
 
