@@ -88,6 +88,22 @@ class Operator:
         logger.info(
             f"Processing bucket '{bucket_name}' and user '{access_key}'.")
 
+        # Ensure user exists first before any bucket operations
+        if not self.backend.user_exists(access_key):
+            logger.info(f"Creating IAM user '{access_key}'.")
+            self.backend.create_user(
+                access_key=access_key,
+                secret_key=secret_key,
+                role=secret_data.get('role'),
+                user_id=secret_data.get('user-id'),
+                group_id=secret_data.get('group-id')
+            )
+            USERS_CREATED.inc()
+        else:
+            logger.info(
+                f"IAM user '{access_key}' already exists. Skipping creation.")
+
+        # Now handle bucket operations
         if not self.backend.bucket_exists(bucket_name):
             logger.info(f"Creating S3 bucket '{bucket_name}'.")
             self.backend.create_bucket(bucket_name, owner=access_key)
@@ -106,20 +122,6 @@ class Operator:
             else:
                 logger.info(
                     f"S3 bucket '{bucket_name}' is already owned by '{access_key}'.")
-
-        if not self.backend.user_exists(access_key):
-            logger.info(f"Creating IAM user '{access_key}'.")
-            self.backend.create_user(
-                access_key=access_key,
-                secret_key=secret_key,
-                role=secret_data.get('role'),
-                user_id=secret_data.get('user-id'),
-                group_id=secret_data.get('group-id')
-            )
-            USERS_CREATED.inc()
-        else:
-            logger.info(
-                f"IAM user '{access_key}' already exists. Skipping creation.")
 
         SECRETS_PROCESSED.inc()
 

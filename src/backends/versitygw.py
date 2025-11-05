@@ -7,6 +7,7 @@ from ..utils import sign_v4_request, send_signed_request
 
 logger = logging.getLogger("s3-resource-operator.versitygw")
 
+
 class VersityGW(Backend):
     """Backend implementation for VersityGW."""
 
@@ -31,9 +32,11 @@ class VersityGW(Backend):
             if owner:
                 self.change_bucket_owner(bucket_name, owner)
         except self.s3.exceptions.BucketAlreadyOwnedByYou:
-            logger.info(f"S3 bucket '{bucket_name}' already exists and is owned by you.")
+            logger.info(
+                f"S3 bucket '{bucket_name}' already exists and is owned by you.")
         except self.s3.exceptions.BucketAlreadyExists:
-            logger.warning(f"S3 bucket '{bucket_name}' already exists and is owned by someone else.")
+            logger.warning(
+                f"S3 bucket '{bucket_name}' already exists and is owned by someone else.")
         except Exception as e:
             raise Exception(f"Error creating bucket '{bucket_name}': {e}")
 
@@ -56,7 +59,7 @@ class VersityGW(Backend):
         )
         response = send_signed_request(signed_request)
         if response.status_code == 200:
-            logger.info("Successfully retrieved bucket list.")
+            logger.debug("Successfully retrieved list of buckets.")
             try:
                 root = ET.fromstring(response.content)
                 return [
@@ -64,9 +67,11 @@ class VersityGW(Backend):
                     for b in root.findall('Buckets')
                 ]
             except ET.ParseError:
-                raise Exception("Failed to parse XML response from list-buckets.")
+                raise Exception(
+                    "Failed to parse XML response from list-buckets.")
         else:
-            raise Exception(f"Error listing buckets: {response.status_code} {response.text}")
+            raise Exception(
+                f"Error listing buckets: {response.status_code} {response.text}")
 
     def bucket_exists(self, bucket_name):
         return any(b['Name'] == bucket_name for b in self._list_buckets_raw())
@@ -79,12 +84,15 @@ class VersityGW(Backend):
 
     def change_bucket_owner(self, bucket_name, new_owner):
         url = f"{self.endpoint_url}/change-bucket-owner/?bucket={bucket_name}&owner={new_owner}"
-        signed_request = sign_v4_request("PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, b"")
+        signed_request = sign_v4_request(
+            "PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, b"")
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            raise Exception(f"Failed to change owner of bucket '{bucket_name}' to '{new_owner}': {response.status_code} {response.text}")
+            raise Exception(
+                f"Failed to change owner of bucket '{bucket_name}' to '{new_owner}': {response.status_code} {response.text}")
         else:
-            logger.info(f"Successfully sent request to change owner of bucket '{bucket_name}' to '{new_owner}'.")
+            logger.info(
+                f"Successfully sent request to change owner of bucket '{bucket_name}' to '{new_owner}'.")
 
     def create_user(self, access_key, secret_key, role=None, user_id=None, group_id=None):
         if self.user_exists(access_key):
@@ -94,45 +102,60 @@ class VersityGW(Backend):
         ET.SubElement(root, "Access").text = str(access_key)
         ET.SubElement(root, "Secret").text = str(secret_key)
         ET.SubElement(root, "Role").text = str(role) if role else "user"
-        if user_id: ET.SubElement(root, "UserID").text = str(user_id)
-        if group_id: ET.SubElement(root, "GroupID").text = str(group_id)
-        
+        if user_id:
+            ET.SubElement(root, "UserID").text = str(user_id)
+        if group_id:
+            ET.SubElement(root, "GroupID").text = str(group_id)
+
         xml_payload = ET.tostring(root)
-        signed_request = sign_v4_request("PATCH", f"{self.endpoint_url}/create-user", "us-east-1", "s3", self.access_key, self.secret_key, xml_payload)
+        signed_request = sign_v4_request(
+            "PATCH", f"{self.endpoint_url}/create-user", "us-east-1", "s3", self.access_key, self.secret_key, xml_payload)
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            raise Exception(f"Failed to create user '{access_key}': {response.status_code} {response.text}")
+            raise Exception(
+                f"Failed to create user '{access_key}': {response.status_code} {response.text}")
         else:
-            logger.info(f"Successfully sent create user request for '{access_key}'.")
+            logger.info(
+                f"Successfully sent create user request for '{access_key}'.")
 
     def update_user(self, access_key, secret_key=None, user_id=None, group_id=None):
         root = ET.Element("MutableProps")
-        if secret_key: ET.SubElement(root, "Secret").text = str(secret_key)
-        if user_id: ET.SubElement(root, "UserID").text = str(user_id)
-        if group_id: ET.SubElement(root, "GroupID").text = str(group_id)
+        if secret_key:
+            ET.SubElement(root, "Secret").text = str(secret_key)
+        if user_id:
+            ET.SubElement(root, "UserID").text = str(user_id)
+        if group_id:
+            ET.SubElement(root, "GroupID").text = str(group_id)
 
         xml_payload = ET.tostring(root)
         url = f"{self.endpoint_url}/update-user?access={access_key}"
-        signed_request = sign_v4_request("PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, xml_payload)
+        signed_request = sign_v4_request(
+            "PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, xml_payload)
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            raise Exception(f"Failed to update user '{access_key}': {response.status_code} {response.text}")
+            raise Exception(
+                f"Failed to update user '{access_key}': {response.status_code} {response.text}")
         else:
-            logger.info(f"Successfully sent update request for user '{access_key}'.")
+            logger.info(
+                f"Successfully sent update request for user '{access_key}'.")
 
     def delete_user(self, access_key):
         url = f"{self.endpoint_url}/delete-user?access={access_key}"
-        signed_request = sign_v4_request("PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, b"")
+        signed_request = sign_v4_request(
+            "PATCH", url, "us-east-1", "s3", self.access_key, self.secret_key, b"")
         response = send_signed_request(signed_request)
         if response.status_code >= 400:
-            raise Exception(f"Failed to delete user '{access_key}': {response.status_code} {response.text}")
+            raise Exception(
+                f"Failed to delete user '{access_key}': {response.status_code} {response.text}")
         else:
             logger.info(f"Successfully deleted user '{access_key}'.")
 
     def _list_users_raw(self):
-        signed_request = sign_v4_request("PATCH", f"{self.endpoint_url}/list-users", "us-east-1", "s3", self.access_key, self.secret_key, b"")
+        signed_request = sign_v4_request(
+            "PATCH", f"{self.endpoint_url}/list-users", "us-east-1", "s3", self.access_key, self.secret_key, b"")
         response = send_signed_request(signed_request)
         if response.status_code == 200:
+            logger.debug("Successfully retrieved list of users.")
             try:
                 root = ET.fromstring(response.content)
                 return [
@@ -140,9 +163,11 @@ class VersityGW(Backend):
                     for a in root.findall('Accounts')
                 ]
             except ET.ParseError:
-                raise Exception("Failed to parse XML response from list-users.")
+                raise Exception(
+                    "Failed to parse XML response from list-users.")
         else:
-            raise Exception(f"Failed to list users: {response.status_code} {response.text}")
+            raise Exception(
+                f"Failed to list users: {response.status_code} {response.text}")
 
     def user_exists(self, access_key):
         return any(u['Access'] == access_key for u in self._list_users_raw())
