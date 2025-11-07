@@ -22,6 +22,32 @@ class VersityGW(Backend):
             aws_secret_access_key=secret_key,
         )
 
+    def test_connection(self):
+        """Test the connection to VersityGW by listing users and buckets.
+
+        Raises:
+            Exception: If the connection test fails.
+        """
+        logger.info(f"Testing connection to backend: {self.endpoint_url}")
+        logger.info(f"Using access key: {self.access_key}")
+
+        try:
+            # Test listing buckets
+            buckets = self._list_buckets_raw()
+            logger.info(
+                f"Connection test: Successfully listed {len(buckets)} bucket(s).")
+
+            # Test listing users
+            users = self._list_users_raw()
+            logger.info(
+                f"Connection test: Successfully listed {len(users)} user(s).")
+
+            logger.info("Backend connection test passed.")
+        except Exception as e:
+            error_msg = f"Backend connection test failed: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
     def create_bucket(self, bucket_name, owner=None):
         if self.bucket_exists(bucket_name):
             logger.info(f"S3 bucket '{bucket_name}' already exists.")

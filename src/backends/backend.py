@@ -1,7 +1,17 @@
 import abc
 
+
 class Backend(abc.ABC):
     """Abstract base class for a storage backend."""
+
+    @abc.abstractmethod
+    def test_connection(self):
+        """Test the connection to the backend by listing users and buckets.
+
+        Raises:
+            Exception: If the connection test fails.
+        """
+        pass
 
     @abc.abstractmethod
     def create_bucket(self, bucket_name, owner=None):

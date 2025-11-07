@@ -290,14 +290,15 @@ Tests are organized to mirror the source code structure:
 
 ```
 tests/
-├── conftest.py         # Pytest fixtures and configuration
-├── test_operator.py    # Tests for Operator class
-├── test_secrets.py     # Tests for SecretManager class
-├── test_metrics.py     # Tests for Prometheus metrics
-├── test_health.py      # Tests for health endpoints
-├── test_shutdown.py    # Tests for graceful shutdown
-├── test_backends.py    # Tests for backend implementations
-└── test_config.py      # Tests for configuration loading
+├── conftest.py           # Pytest fixtures and configuration
+├── test_operator.py      # Tests for Operator class
+├── test_secrets.py       # Tests for SecretManager class
+├── test_metrics.py       # Tests for Prometheus metrics
+├── test_health.py        # Tests for health endpoints
+├── test_shutdown.py      # Tests for graceful shutdown
+├── test_backends.py      # Tests for backend implementations
+├── test_connection.py    # Tests for backend connection testing
+└── test_config.py        # Tests for configuration loading
 ```
 
 Each test module corresponds to its source module, making it easy to locate and maintain tests.
@@ -536,6 +537,28 @@ The operator can be configured using the following environment variables:
 | `ROOT_ACCESS_KEY`         | The root access key for the S3 endpoint (for the operator itself).          | (required)                     |
 | `ROOT_SECRET_KEY`         | The root secret key for the S3 endpoint (for the operator itself).          | (required)                     |
 | `BACKEND_NAME`            | The name of the S3 backend to use (`versitygw`, `minio`, `garage`).         | `versitygw`                    |
+| `LOG_LEVEL`               | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).            | `INFO`                         |
+
+### Backend Connection Test
+
+On startup, the operator performs a connection test to verify backend connectivity:
+
+- **What it does**: Lists users and buckets from the backend
+- **What it logs**: Displays the backend URL and access key being used
+- **Behavior**: Operator exits with error code 1 if the connection test fails
+
+This ensures the operator won't start with a misconfigured or unreachable backend.
+
+Example startup logs:
+```
+INFO - Initializing backend 'versitygw'...
+INFO - Testing backend connection...
+INFO - Testing connection to backend: http://versitygw.default.svc.cluster.local:7070
+INFO - Using access key: admin
+INFO - Connection test: Successfully listed 5 bucket(s).
+INFO - Connection test: Successfully listed 3 user(s).
+INFO - Backend connection test passed.
+```
 
 ## Monitoring
 

@@ -20,6 +20,9 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 podAnnotations: {}
+  # Uncomment to enable automatic pod restarts when secrets/configmaps change
+  # Requires Reloader from Stakater: https://github.com/stakater/Reloader
+  # reloader.stakater.com/auto: "true"
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
