@@ -75,6 +75,13 @@ def main():
         logger.error(f"Failed to initialize backend '{backend_name}': {e}")
         exit(1)
 
+    logger.info("Testing backend connection...")
+    try:
+        backend.test_connection()
+    except Exception as e:
+        logger.error(f"Backend connection test failed: {e}")
+        exit(1)
+
     v1_api = get_k8s_api()
     secret_manager = SecretManager(v1_api, annotation_key)
     operator = Operator(v1_api, backend, secret_manager)

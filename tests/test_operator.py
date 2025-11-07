@@ -97,7 +97,7 @@ def test_handle_secret_existing_resources(kube_client, versitygw_client):
 
 
 def test_handle_secret_change_owner(kube_client, versitygw_client):
-    """Test changing the owner of an existing bucket."""
+    """Test changing the owner of an existing bucket to an existing user."""
     backend = versitygw_client
     secret_manager = MagicMock()
     op = Operator(kube_client, backend, secret_manager)
@@ -112,6 +112,7 @@ def test_handle_secret_change_owner(kube_client, versitygw_client):
 
     backend.endpoint_url = "http://s3.example.com"
     backend.bucket_exists.return_value = True
+    backend.user_exists.return_value = True  # User already exists
     backend.get_bucket_owner.return_value = "old-owner"
 
     mock_secret = create_mock_secret(
@@ -124,6 +125,53 @@ def test_handle_secret_change_owner(kube_client, versitygw_client):
 
     backend.change_bucket_owner.assert_called_once_with(
         "existing-bucket", "new-owner")
+    backend.create_user.assert_not_called()  # User already exists
 
     # Verify metric was incremented
+    assert BUCKET_OWNERS_CHANGED._value.get() == initial_owners_changed + 1
+
+
+def test_handle_secret_existing_bucket_new_user(kube_client, versitygw_client):
+    """Test handling a secret for an existing bucket but new user (the bug scenario)."""
+    backend = versitygw_client
+    secret_manager = MagicMock()
+    op = Operator(kube_client, backend, secret_manager)
+
+    secret_data = {
+        "bucket-name": "existing-bucket",
+        "access-key": "new-user",
+        "access-secret": "new-password",
+        "endpoint-url": "http://s3.example.com"
+    }
+    secret_manager.process_secret.return_value = secret_data
+
+    backend.endpoint_url = "http://s3.example.com"
+    backend.bucket_exists.return_value = True
+    backend.user_exists.return_value = False  # User doesn't exist yet
+    backend.get_bucket_owner.return_value = "old-owner"
+
+    mock_secret = create_mock_secret(
+        "bucket-new-user-secret", "default", {}, secret_data)
+
+    # Get initial metric values
+    initial_users_created = USERS_CREATED._value.get()
+    initial_owners_changed = BUCKET_OWNERS_CHANGED._value.get()
+
+    op.handle_secret(mock_secret)
+
+    # Verify user is created BEFORE attempting to change bucket owner
+    assert backend.user_exists.call_count == 1
+    backend.create_user.assert_called_once()
+    backend.create_bucket.assert_not_called()  # Bucket already exists
+    backend.change_bucket_owner.assert_called_once_with(
+        "existing-bucket", "new-user")
+
+    # Verify call order: user_exists should be called before change_bucket_owner
+    call_order = [call[0] for call in backend.method_calls]
+    user_exists_index = call_order.index('user_exists')
+    change_owner_index = call_order.index('change_bucket_owner')
+    assert user_exists_index < change_owner_index, "user_exists must be called before change_bucket_owner"
+
+    # Verify metrics were incremented
+    assert USERS_CREATED._value.get() == initial_users_created + 1
     assert BUCKET_OWNERS_CHANGED._value.get() == initial_owners_changed + 1

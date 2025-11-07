@@ -28,6 +28,11 @@ def test_load_dotenv():
         os.environ['ROOT_SECRET_KEY'] = 'test-secret'
         os.environ['BACKEND_NAME'] = 'versitygw'
 
+        # Mock the backend instance with test_connection method
+        mock_backend_instance = MagicMock()
+        mock_backend_instance.test_connection = MagicMock()
+        mock_get_backend.return_value = mock_backend_instance
+
         # Mock the operator instance
         mock_operator_instance = MagicMock()
         mock_operator.return_value = mock_operator_instance
