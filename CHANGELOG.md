@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/runningman84/s3-resource-operator/compare/v1.6.1...v1.7.0) (2025-11-07)
+
+
+### Bug Fixes
+
+* update tests to cover all cases ([f631607](https://github.com/runningman84/s3-resource-operator/commit/f6316075c66d1f5953b919577a491d4d7ee960e8))
+
+
+### Features
+
+* added connection test feature ([772c9ab](https://github.com/runningman84/s3-resource-operator/commit/772c9ab94cc16697d3ccba70c06bee8d5bb6a24c))
+
 ## [1.6.1](https://github.com/runningman84/s3-resource-operator/compare/v1.6.0...v1.6.1) (2025-11-05)
 
 
