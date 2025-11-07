@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/runningman84/s3-resource-operator/compare/v1.6.0...v1.6.1) (2025-11-05)
+
+
+### Bug Fixes
+
+* check users before bucket creation or ownership change ([57e6899](https://github.com/runningman84/s3-resource-operator/commit/57e6899ebbaf9f897f5279d3012119fee2134ab8))
+
 # [1.6.0](https://github.com/runningman84/s3-resource-operator/compare/v1.5.0...v1.6.0) (2025-11-05)
 
 
