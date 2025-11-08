@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/runningman84/s3-resource-operator/compare/v1.7.0...v1.7.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* update docs ([d430c98](https://github.com/runningman84/s3-resource-operator/commit/d430c98ceeba949d67705b4ece8b535bcae85d90))
+
 # [1.7.0](https://github.com/runningman84/s3-resource-operator/compare/v1.6.1...v1.7.0) (2025-11-07)
 
 
