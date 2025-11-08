@@ -48,7 +48,7 @@ The operator is deployed using a Helm chart published to GitHub Container Regist
 Install the chart directly from the OCI registry with credentials:
 
 ```sh
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --version 1.7.0 \
       --namespace s3-resource-operator \
       --create-namespace \
@@ -70,7 +70,7 @@ kubectl create secret generic my-s3-credentials \
   --from-literal=ROOT_SECRET_KEY="<your-admin-secret-key>"
 
 # Install the chart referencing the existing secret
-helm install s3-resource-operator oci://ghcr.io/runningman84/s3-resource-operator \
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
       --version 1.7.0 \
       --namespace s3-resource-operator \
       --create-namespace \
@@ -473,7 +473,7 @@ The release process is fully automated using semantic versioning:
 
 4. **Result**: New version available within minutes at:
    - Docker: `ghcr.io/runningman84/s3-resource-operator:1.7.0`
-   - Helm: `oci://ghcr.io/runningman84/s3-resource-operator --version 1.7.0`
+   - Helm: `oci://ghcr.io/runningman84/charts/s3-resource-operator --version 1.7.0`
 
 
 ### Complete Automation Flow

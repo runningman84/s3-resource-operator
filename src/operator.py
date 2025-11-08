@@ -41,6 +41,7 @@ class Operator:
         self.backend = backend
         self.secret_manager = secret_manager
         self._shutdown = threading.Event()
+        self._processed_secrets = {}  # Track resourceVersion of processed secrets
 
     def shutdown(self):
         """Signal the operator to shutdown gracefully."""
@@ -148,7 +149,7 @@ class Operator:
         try:
             while not self._shutdown.is_set():
                 try:
-                    for event in w.stream(self.v1_api.list_secret_for_all_namespaces, timeout_seconds=10):
+                    for event in w.stream(self.v1_api.list_secret_for_all_namespaces, timeout_seconds=30):
                         if self._shutdown.is_set():
                             logger.info(
                                 "Shutdown requested during watch loop. Exiting...")
@@ -167,12 +168,26 @@ class Operator:
                             continue
 
                         event_type = event_dict.get('type', 'UNKNOWN')
+
+                        # Create unique key for this secret
+                        secret_key = f"{secret.metadata.namespace}/{secret.metadata.name}"
+                        resource_version = secret.metadata.resource_version
+
+                        # Skip if we've already processed this exact version (handles watch reconnections)
+                        if secret_key in self._processed_secrets:
+                            if self._processed_secrets[secret_key] == resource_version:
+                                logger.debug(
+                                    f"Skipping already processed secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}' (version {resource_version})")
+                                continue
+
                         logger.info(
-                            f"Handling '{event_type}' event for secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}'")
+                            f"Handling '{event_type}' event for secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}' (version {resource_version})")
 
                         if event_type in ['ADDED', 'MODIFIED']:
                             try:
                                 self.handle_secret(secret)
+                                # Track that we've processed this version
+                                self._processed_secrets[secret_key] = resource_version
                             except Exception as e:
                                 ERRORS_TOTAL.inc()
                                 logger.error(
