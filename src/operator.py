@@ -90,10 +90,11 @@ class Operator:
             ERRORS_TOTAL.inc()
             raise Exception(
                 f"Secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}' is missing required fields: {', '.join(missing_fields)}")
-        if endpoint_url and endpoint_url != self.backend.endpoint_url:
-            ERRORS_TOTAL.inc()
-            raise Exception(
-                f"Endpoint URL {endpoint_url} in secret '{secret.metadata.name}' does not match operator configuration {self.backend.endpoint_url}.")
+        if os.environ.get('ENFORCE_ENDPOINT_CHECK', 'true').lower() == 'true':
+            if endpoint_url and endpoint_url != self.backend.endpoint_url:
+                ERRORS_TOTAL.inc()
+                raise Exception(
+                    f"Endpoint URL {endpoint_url} in secret '{secret.metadata.name}' does not match operator configuration {self.backend.endpoint_url}.")
 
         logger.info(
             f"Processing bucket '{bucket_name}' and user '{access_key}'.")
@@ -110,8 +111,14 @@ class Operator:
             )
             USERS_CREATED.inc()
         else:
-            logger.info(
-                f"IAM user '{access_key}' already exists. Skipping creation.")
+            logger.info(f"Updating IAM user '{access_key}'.")
+            self.backend.update_user(
+                access_key=access_key,
+                secret_key=secret_key,
+                user_id=secret_data.get('user-id'),
+                group_id=secret_data.get('group-id')
+            )
+            USERS_UPDATED.inc()
 
         # Now handle bucket operations
         if not self.backend.bucket_exists(bucket_name):
