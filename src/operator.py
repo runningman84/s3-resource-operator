@@ -71,11 +71,11 @@ class Operator:
         bucket_name = secret_data.get(
             'bucket-name', secret_data.get('BUCKET_NAME'))
         access_key = secret_data.get(
-            'access-key', secret_data.get('ACCESS_KEY'))
+            'access-key', secret_data.get('ACCESS_KEY', secret_data.get('ACCESS_KEY_ID', secret_data.get('AWS_ACCESS_KEY_ID'))))
         secret_key = secret_data.get(
-            'secret-key', secret_data.get('SECRET_KEY'))
+            'secret-key', secret_data.get('SECRET_KEY', secret_data.get('SECRET_ACCESS_KEY', secret_data.get('AWS_SECRET_ACCESS_KEY'))))
         endpoint_url = secret_data.get(
-            'endpoint-url', secret_data.get('ENDPOINT_URL'))
+            'endpoint-url', secret_data.get('ENDPOINT_URL', secret_data.get('AWS_ENDPOINT_URL')))
 
         # Validate required fields after resolving aliases and check explicitly for None/empty
         required_fields = {
