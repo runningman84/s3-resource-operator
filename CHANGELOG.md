@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/runningman84/s3-resource-operator/compare/v1.8.0...v1.9.0) (2025-11-21)
+
+
+### Features
+
+* allow additional AWS env names ([fe92aff](https://github.com/runningman84/s3-resource-operator/commit/fe92affe226f9b513587bbbe52045e75cedc3aba))
+
 # [1.8.0](https://github.com/runningman84/s3-resource-operator/compare/v1.7.1...v1.8.0) (2025-11-21)
 
 
