@@ -50,7 +50,7 @@ def test_process_secret(kube_client):
     data = {
         "bucket-name": "test-bucket",
         "access-key": "test-user",
-        "access-secret": "test-password",
+        "secret-key": "test-password",
         "endpoint-url": "http://s3.example.com"
     }
 

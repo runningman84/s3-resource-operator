@@ -35,7 +35,7 @@ def test_handle_secret_creation(kube_client, versitygw_client):
     secret_data = {
         "bucket-name": "new-bucket",
         "access-key": "new-user",
-        "access-secret": "new-password",
+        "secret-key": "new-password",
         "endpoint-url": "http://versitygw:8080",
     }
     secret_manager.process_secret.return_value = secret_data
@@ -76,7 +76,7 @@ def test_handle_secret_existing_resources(kube_client, versitygw_client):
     secret_data = {
         "bucket-name": "existing-bucket",
         "access-key": "existing-user",
-        "access-secret": "existing-password",
+        "secret-key": "existing-password",
         "endpoint-url": "http://versitygw:8080",
     }
     secret_manager.process_secret.return_value = secret_data
@@ -105,7 +105,7 @@ def test_handle_secret_change_owner(kube_client, versitygw_client):
     secret_data = {
         "bucket-name": "existing-bucket",
         "access-key": "new-owner",
-        "access-secret": "new-password",
+        "secret-key": "new-password",
         "endpoint-url": "http://s3.example.com"
     }
     secret_manager.process_secret.return_value = secret_data
@@ -140,7 +140,7 @@ def test_handle_secret_existing_bucket_new_user(kube_client, versitygw_client):
     secret_data = {
         "bucket-name": "existing-bucket",
         "access-key": "new-user",
-        "access-secret": "new-password",
+        "secret-key": "new-password",
         "endpoint-url": "http://s3.example.com"
     }
     secret_manager.process_secret.return_value = secret_data
@@ -175,3 +175,40 @@ def test_handle_secret_existing_bucket_new_user(kube_client, versitygw_client):
     # Verify metrics were incremented
     assert USERS_CREATED._value.get() == initial_users_created + 1
     assert BUCKET_OWNERS_CHANGED._value.get() == initial_owners_changed + 1
+
+
+def test_handle_secret_with_uppercase_aliases(kube_client, versitygw_client):
+    """Test that uppercase aliases BUCKET_NAME/ACCESS_KEY/SECRET_KEY also work."""
+    backend = versitygw_client
+    secret_manager = MagicMock()
+    op = Operator(kube_client, backend, secret_manager)
+
+    # Provide uppercase keys instead of lowercase
+    secret_data = {
+        "BUCKET_NAME": "alias-bucket",
+        "ACCESS_KEY": "alias-user",
+        "SECRET_KEY": "alias-password",
+        "ENDPOINT_URL": "http://versitygw:8080",
+    }
+    secret_manager.process_secret.return_value = secret_data
+
+    backend.endpoint_url = "http://versitygw:8080"
+    backend.bucket_exists.return_value = False
+    backend.user_exists.return_value = False
+
+    mock_secret = create_mock_secret(
+        "alias-secret", "default", {}, secret_data)
+
+    initial_buckets_created = BUCKETS_CREATED._value.get()
+    initial_users_created = USERS_CREATED._value.get()
+
+    op.handle_secret(mock_secret)
+
+    backend.bucket_exists.assert_called_once_with("alias-bucket")
+    backend.create_bucket.assert_called_once_with(
+        "alias-bucket", owner="alias-user")
+    backend.user_exists.assert_called_once_with("alias-user")
+    backend.create_user.assert_called_once()
+
+    assert BUCKETS_CREATED._value.get() == initial_buckets_created + 1
+    assert USERS_CREATED._value.get() == initial_users_created + 1
