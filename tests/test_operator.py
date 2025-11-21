@@ -6,7 +6,8 @@ from src.operator import (
     Operator,
     USERS_CREATED,
     BUCKETS_CREATED,
-    BUCKET_OWNERS_CHANGED
+    BUCKET_OWNERS_CHANGED,
+    USERS_UPDATED,
 )
 import base64
 
@@ -212,3 +213,43 @@ def test_handle_secret_with_uppercase_aliases(kube_client, versitygw_client):
 
     assert BUCKETS_CREATED._value.get() == initial_buckets_created + 1
     assert USERS_CREATED._value.get() == initial_users_created + 1
+
+
+def test_handle_secret_updates_user(kube_client, versitygw_client):
+    """Test that an existing user is updated (not created) and metric increments."""
+    backend = versitygw_client
+    secret_manager = MagicMock()
+    op = Operator(kube_client, backend, secret_manager)
+
+    secret_data = {
+        "bucket-name": "some-bucket",
+        "access-key": "existing-user",
+        "secret-key": "updated-secret",
+        "user-id": "42",
+        "group-id": "7",
+        "endpoint-url": "http://versitygw:8080",
+    }
+    secret_manager.process_secret.return_value = secret_data
+
+    backend.endpoint_url = "http://versitygw:8080"
+    backend.bucket_exists.return_value = True
+    backend.user_exists.return_value = True  # User exists -> should be updated
+
+    mock_secret = create_mock_secret(
+        "update-secret", "default", {}, secret_data)
+
+    # Capture initial metric
+    initial_users_updated = USERS_UPDATED._value.get()
+
+    op.handle_secret(mock_secret)
+
+    backend.update_user.assert_called_once_with(
+        access_key="existing-user",
+        secret_key="updated-secret",
+        user_id="42",
+        group_id="7",
+    )
+    backend.create_user.assert_not_called()
+
+    # Verify metric was incremented
+    assert USERS_UPDATED._value.get() == initial_users_updated + 1
