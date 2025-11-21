@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/runningman84/s3-resource-operator/compare/v1.7.1...v1.8.0) (2025-11-21)
+
+
+### Features
+
+* allow upercasse BUCKET_NAME, ACCESS_KEY and SECRET_KEY in configmap ([5c2aba0](https://github.com/runningman84/s3-resource-operator/commit/5c2aba097981cc2df790e44f72cd68c48a2e4106))
+
 ## [1.7.1](https://github.com/runningman84/s3-resource-operator/compare/v1.7.0...v1.7.1) (2025-11-08)
 
 
