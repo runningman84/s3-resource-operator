@@ -68,3 +68,6 @@ jobs:
     permissions:
       contents: write
       packages: write
+
+  sync:
+    uses: ./.github/workflows/sync.yml
