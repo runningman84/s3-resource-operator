@@ -68,19 +68,28 @@ class Operator:
         """
         secret_data = self.secret_manager.process_secret(secret)
 
-        required_fields = ['bucket-name', 'access-key', 'access-secret']
+        bucket_name = secret_data.get(
+            'bucket-name', secret_data.get('BUCKET_NAME'))
+        access_key = secret_data.get(
+            'access-key', secret_data.get('ACCESS_KEY'))
+        secret_key = secret_data.get(
+            'secret-key', secret_data.get('SECRET_KEY'))
+        endpoint_url = secret_data.get(
+            'endpoint-url', secret_data.get('ENDPOINT_URL'))
+
+        # Validate required fields after resolving aliases and check explicitly for None/empty
+        required_fields = {
+            'bucket-name': bucket_name,
+            'access-key': access_key,
+            'secret-key': secret_key,
+        }
         missing_fields = [
-            field for field in required_fields if not secret_data.get(field)]
+            name for name, val in required_fields.items() if val is None or val == ''
+        ]
         if missing_fields:
             ERRORS_TOTAL.inc()
             raise Exception(
                 f"Secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}' is missing required fields: {', '.join(missing_fields)}")
-
-        bucket_name = secret_data.get('bucket-name')
-        access_key = secret_data.get('access-key')
-        secret_key = secret_data.get('access-secret')
-        endpoint_url = secret_data.get('endpoint-url')
-
         if endpoint_url and endpoint_url != self.backend.endpoint_url:
             ERRORS_TOTAL.inc()
             raise Exception(
