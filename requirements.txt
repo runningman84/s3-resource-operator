@@ -12,3 +12,9 @@ botocore==1.42.26
 requests==2.32.5
 prometheus-client==0.24.0
 python-dotenv==1.2.1
+
+# Security: pin urllib3 to a version that includes the fix for CVE-2025-66418
+# CVE-2025-66418 fixed in urllib3 2.6.0. Use >=2.6.0 to ensure the fix is present.
+# If you hit dependency conflicts (notably with older kubernetes or requests
+# releases), update those packages to compatible versions instead of downgrading urllib3.
+urllib3>=2.6.0,<3
