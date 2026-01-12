@@ -1,3 +1,25 @@
+# [1.11.0](https://github.com/runningman84/s3-resource-operator/compare/v1.10.0...v1.11.0) (2026-01-12)
+
+
+### Bug Fixes
+
+* bump dependencies ([5c6abac](https://github.com/runningman84/s3-resource-operator/commit/5c6abac8f7ea66d881ebe0e4ea020dd3b51d8a2d))
+* cve urllib ([c9dbb66](https://github.com/runningman84/s3-resource-operator/commit/c9dbb66be70071003891d59b1fbd502eba5c3bb3))
+* do not error for skipped buckets ([56f7eea](https://github.com/runningman84/s3-resource-operator/commit/56f7eea0a6f318a62312ac9f98bf55ecb5a64afd))
+* remove urlib ([d33497d](https://github.com/runningman84/s3-resource-operator/commit/d33497d4ec8fbb7ff3d81c2912efb9de3ad24eeb))
+
+
+### Features
+
+* migration from python to go ([9dadf46](https://github.com/runningman84/s3-resource-operator/commit/9dadf46e0ca10a1096854413b311c5a813ac451d))
+
+# [1.10.0](https://github.com/runningman84/s3-resource-operator/compare/v1.9.0...v1.10.0) (2025-11-21)
+
+
+### Features
+
+* update credentials for existing users ([d72986a](https://github.com/runningman84/s3-resource-operator/commit/d72986a6b44c39a6fc0ee68e910fc7a170f5f290))
+
 # [1.9.0](https://github.com/runningman84/s3-resource-operator/compare/v1.8.0...v1.9.0) (2025-11-21)
 
 
