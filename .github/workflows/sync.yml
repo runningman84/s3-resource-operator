@@ -33,7 +33,8 @@ jobs:
           git merge origin/main --no-ff -m "chore: sync main to develop [skip ci]"
           # Amend the merge commit with a Signed-off-by trailer so DCO checks pass
           git commit --amend --no-edit --signoff --author="github-actions[bot] <github-actions[bot]@users.noreply.github.com>" || true
-          git push origin develop
+          # Use force-with-lease to handle concurrent updates safely
+          git push origin develop --force-with-lease
 
       - name: Sync summary
         run: |

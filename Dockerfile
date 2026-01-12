@@ -20,7 +20,7 @@ RUN go mod download && go mod tidy
 RUN set -x && go build -v -o operator ./cmd
 
 # Runtime stage
-FROM alpine:latest
+FROM alpine:3.23.2
 
 # Install ca-certificates for HTTPS connections
 RUN apk --no-cache add ca-certificates
