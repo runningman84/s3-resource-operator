@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/runningman84/s3-resource-operator/compare/v1.9.0...v1.10.0) (2025-11-21)
+
+
+### Features
+
+* update credentials for existing users ([d72986a](https://github.com/runningman84/s3-resource-operator/commit/d72986a6b44c39a6fc0ee68e910fc7a170f5f290))
+
 # [1.9.0](https://github.com/runningman84/s3-resource-operator/compare/v1.8.0...v1.9.0) (2025-11-21)
 
 
