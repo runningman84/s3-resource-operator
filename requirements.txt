@@ -1,7 +1,12 @@
-# Pin urllib3 to satisfy kubernetes dependency requirements
-# kubernetes 34.1.0 requires: urllib3<2.4.0,>=1.24.2
-urllib3<2.4.0,>=1.24.2
-kubernetes==34.1.0
+# NOTE: Removing explicit urllib3 pin because it conflicts with
+# other requirements. Let the package resolver choose a compatible
+# version of urllib3 for the pinned `kubernetes` package.
+# If you need a specific urllib3 range, pin a kubernetes version
+# that is compatible with it instead.
+# Allow newer kubernetes releases so pip can select a version
+# compatible with the environment's urllib3 requirement.
+# Pin a maximum if you want to avoid breaking changes, e.g. <36.0.0
+kubernetes>=34.1.0,<36.0.0
 boto3==1.40.64
 botocore==1.40.64
 requests==2.32.5
