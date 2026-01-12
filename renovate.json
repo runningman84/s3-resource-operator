@@ -27,9 +27,15 @@
         "dockerfile"
       ],
       "matchPackageNames": [
-        "python"
+        "golang"
       ],
-      "groupName": "Python Docker base image"
+      "groupName": "Go Docker base image"
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "Go dependencies"
     },
     {
       "matchManagers": [
@@ -41,7 +47,7 @@
   "docker": {
     "pinDigests": true
   },
-  "python": {
+  "golang": {
     "enabled": true
   },
   "helm-values": {

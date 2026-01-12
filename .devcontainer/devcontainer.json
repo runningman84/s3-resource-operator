@@ -1,28 +1,27 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/python
+// README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
-	"name": "Python 3",
+	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:2-3.12-bullseye",
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.23-bullseye",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube": {
 			"version": "latest",
 			"helm": "latest",
 			"minikube": "latest"
-		},
+		}
 		// "ghcr.io/devcontainers/features/aws-cli:1": {}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip3 install --user -r requirements.txt && git config commit.template .gitmessage && git config format.signoff true",
+	"postCreateCommand": "go mod download && git config commit.template .gitmessage && git config format.signoff true",
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-python.python",
-				"ms-python.vscode-pylance",
+				"golang.go",
 				"vivaxy.vscode-conventional-commits"
 			]
 		}

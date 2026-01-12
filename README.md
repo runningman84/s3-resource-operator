@@ -179,7 +179,7 @@ It is recommended to use a tool like the [External Secrets Operator](https://ext
 
 ## Development
 
-To run the operator locally for development, you need Python 3.12+ and the required dependencies.
+To run the operator locally for development, you need Go 1.23+ and access to a Kubernetes cluster.
 
 1.  **Clone the repository:**
 
@@ -191,7 +191,7 @@ To run the operator locally for development, you need Python 3.12+ and the requi
 2.  **Install dependencies:**
 
     ```sh
-    pip install -r requirements.txt
+    go mod download
     ```
 
 3.  **Set Environment Variables:**
@@ -200,7 +200,6 @@ To run the operator locally for development, you need Python 3.12+ and the requi
 
     ```sh
     export KUBECONFIG=~/.kube/config
-    export LOG_LEVEL="INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
     export S3_ENDPOINT_URL="http://<your-s3-endpoint>"
     export ROOT_ACCESS_KEY="<your-admin-access-key>"
     export ROOT_SECRET_KEY="<your-admin-secret-key>"
@@ -211,7 +210,9 @@ To run the operator locally for development, you need Python 3.12+ and the requi
 4.  **Run the operator:**
 
     ```sh
-    python3 -m src.main
+    go run ./cmd/main.go
+    # Or use make
+    make run
     ```
 
 ## Code Architecture
@@ -221,33 +222,51 @@ The operator follows a modular architecture with clear separation of concerns:
 ### Source Code Structure
 
 ```
-src/
-├── main.py           # Entry point and application initialization
-├── operator.py       # Main operator logic and watch loop
-├── secrets.py        # Kubernetes secret discovery and processing
-├── metrics.py        # Prometheus metrics and health endpoints
-├── utils.py          # Utility functions (Kubernetes API client, signing)
-└── backends/         # S3 backend implementations
-    ├── backend.py    # Abstract base class
-    ├── versitygw.py  # VersityGW backend
-    ├── minio.py      # MinIO backend
-    └── garage.py     # Garage backend
+cmd/
+└── main.go           # Entry point and application initialization
+
+pkg/
+├── controller/       # Main operator logic
+│   ├── controller.go # Controller implementation and watch loop
+│   └── controller_test.go
+├── backends/         # S3 backend implementations
+│   ├── backend.go    # Backend interface
+│   ├── backend_test.go
+│   ├── versitygw.go  # VersityGW backend
+│   ├── minio.go      # MinIO backend (placeholder)
+│   └── garage.go     # Garage backend (placeholder)
+└── metrics/          # Prometheus metrics
+    ├── metrics.go
+    └── metrics_test.go
 ```
 
 ### Module Responsibilities
 
-#### `main.py` - Entry Point
+#### `cmd/main.go` - Entry Point
 - Application initialization and configuration
-- Environment variable loading
+- Environment variable and flag processing
 - Signal handler setup for graceful shutdown
+- Kubernetes client configuration
 - Orchestrates startup of all components
 
-#### `operator.py` - Operator Logic
-- **Operator class**: Main orchestration and watch loop
-- Secret lifecycle management (`handle_secret`)
-- Periodic synchronization (`sync`)
+#### `pkg/controller` - Operator Logic
+- **Controller struct**: Main orchestration and watch loop
+- Secret lifecycle management
+- Periodic synchronization
 - Kubernetes watch stream handling
-- Prometheus metrics definitions:
+- Prometheus metrics integration
+
+#### `pkg/backends` - Backend Implementations
+- **Backend interface**: Defines common operations
+- Backend-specific implementations for:
+  - **VersityGW**: Full support (create bucket/user, ownership)
+  - **MinIO**: Planned support
+  - **Garage**: Planned support
+- Pluggable architecture for easy backend addition
+
+#### `pkg/metrics` - Observability
+- Prometheus metrics registration and tracking
+- Metrics exposed:
   - `s3_operator_secrets_processed_total`
   - `s3_operator_errors_total`
   - `s3_operator_sync_duration_seconds`
@@ -258,51 +277,6 @@ src/
   - `s3_operator_buckets_created_total`
   - `s3_operator_bucket_owners_changed_total`
 
-#### `secrets.py` - Secret Management
-- **SecretManager class**: Kubernetes secret operations
-- Secret discovery with annotation filtering
-- Base64 decoding of secret data
-- Secret validation and processing
-
-#### `metrics.py` - Observability
-- **MetricsServer class**: HTTP server for monitoring
-- Prometheus metrics endpoint (`/metrics`)
-- Health check endpoint (`/healthz`)
-- Threaded HTTP server for non-blocking operation
-
-#### `utils.py` - Utilities
-- Kubernetes API client initialization (`get_k8s_api`)
-- AWS Signature V4 request signing
-- Signed request execution
-- Reusable helper functions
-
-#### `backends/` - Backend Implementations
-- Abstract `Backend` base class defining the interface
-- Backend-specific implementations for:
-  - **VersityGW**: Full support (create bucket/user, ownership)
-  - **MinIO**: Planned support
-  - **Garage**: Planned support
-- Pluggable architecture for easy backend addition
-
-### Test Structure
-
-Tests are organized to mirror the source code structure:
-
-```
-tests/
-├── conftest.py           # Pytest fixtures and configuration
-├── test_operator.py      # Tests for Operator class
-├── test_secrets.py       # Tests for SecretManager class
-├── test_metrics.py       # Tests for Prometheus metrics
-├── test_health.py        # Tests for health endpoints
-├── test_shutdown.py      # Tests for graceful shutdown
-├── test_backends.py      # Tests for backend implementations
-├── test_connection.py    # Tests for backend connection testing
-└── test_config.py        # Tests for configuration loading
-```
-
-Each test module corresponds to its source module, making it easy to locate and maintain tests.
-
 ### Design Principles
 
 - **Single Responsibility**: Each module has a focused purpose
@@ -310,6 +284,7 @@ Each test module corresponds to its source module, making it easy to locate and 
 - **Testability**: Modular design enables comprehensive unit testing
 - **Extensibility**: New backends can be added without modifying core logic
 - **Observability**: Built-in metrics and health checks
+- **Type Safety**: Go's static typing prevents runtime errors
 
 ## CI/CD
 
@@ -319,7 +294,7 @@ This project uses GitHub Actions for continuous integration and deployment with 
 
 1. **Test** (`.github/workflows/test.yml`)
    - Runs on: Push to `develop` branch and all pull requests
-   - Executes: Python tests, Helm chart validation, Docker build verification, Trivy security scan
+   - Executes: Go tests, Helm chart validation, Docker build verification, Trivy security scan
    - Can be: Called by other workflows (`workflow_call`) or run manually
 
 2. **Commit Validation** (`.github/workflows/commitlint.yml`)
@@ -387,9 +362,9 @@ Each release includes comprehensive Software Bill of Materials (SBOM) and vulner
 Complete Software Bill of Materials (SBOM) generated using [Syft](https://github.com/anchore/syft):
 
 - **What it contains**: Complete runtime environment
-  - Operating system packages (Debian, Alpine, etc.)
-  - Python runtime and all installed packages
-  - System libraries and dependencies
+  - Operating system packages (Alpine Linux)
+  - Go runtime and dependencies
+  - System libraries
   - Everything actually deployed in production
 - **Formats**: SPDX and CycloneDX (JSON)
 - **Platform-specific**: Separate SBOMs for AMD64 and ARM64
@@ -520,6 +495,21 @@ Developer Pushes to main
     └─ Merge main → develop (includes CHANGELOG, versions)
          ↓
    🎉 Release Complete!
+```
+
+### Testing
+
+Run the test suite:
+
+```sh
+# Run all tests
+make test
+
+# Run tests with coverage
+make coverage
+
+# Run linter
+make lint
 ```
 
 ### Commit Message Validation
