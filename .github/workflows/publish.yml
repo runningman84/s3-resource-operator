@@ -274,7 +274,7 @@ jobs:
           echo "Generated SBOMs for version \`${{ steps.tag.outputs.version }}\`:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Docker Image SBOMs" >> $GITHUB_STEP_SUMMARY
-          echo "- **Combined**: SPDX and CycloneDX formats (includes all OS packages, Python packages, and system libraries)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Combined**: SPDX and CycloneDX formats (includes all OS packages, Go dependencies, and system libraries)" >> $GITHUB_STEP_SUMMARY
           echo "- **AMD64**: Platform-specific SPDX and CycloneDX" >> $GITHUB_STEP_SUMMARY
           echo "- **ARM64**: Platform-specific SPDX and CycloneDX" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

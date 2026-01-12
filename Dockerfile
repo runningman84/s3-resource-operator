@@ -1,25 +1,40 @@
-# Use an official Python runtime as a parent image
-FROM python:3.14-alpine
+# Build stage
+FROM golang:1.23-alpine AS builder
 
-# Set the working directory in the container
+# Install build dependencies
+RUN apk add --no-cache git make
+
+WORKDIR /workspace
+
+# Copy go mod files
+COPY go.mod ./
+
+# Copy source code (needed for go mod tidy to resolve all dependencies)
+COPY cmd/ cmd/
+COPY pkg/ pkg/
+
+# Download dependencies and populate go.sum with all transitive dependencies
+RUN go mod download && go mod tidy
+
+# Build the operator
+RUN set -x && go build -v -o operator ./cmd
+
+# Runtime stage
+FROM alpine:latest
+
+# Install ca-certificates for HTTPS connections
+RUN apk --no-cache add ca-certificates
+
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Copy the binary from builder
+COPY --from=builder /workspace/operator .
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the application source code
-COPY src/ ./src/
-
-# Create a non-root user and group
+# Create non-root user
 RUN addgroup -g 1000 appuser && \
     adduser -D -u 1000 -G appuser appuser && \
     chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER 1000
 
-# Run the application when the container launches
-CMD ["python", "-m", "src.main"]
+ENTRYPOINT ["/app/operator"]

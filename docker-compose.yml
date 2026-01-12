@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  s3-resource-operator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: s3-resource-operator
+    env_file:
+      - .env
+    environment:
+      - KUBECONFIG=/app/.kube/config
+    restart: unless-stopped
+    volumes:
+      - ${HOME}/.kube/config:/app/.kube/config:ro
+    # Uncomment if you need to expose any ports
+    ports:
+      - "8000:8000"
