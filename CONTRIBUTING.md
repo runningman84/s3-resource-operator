@@ -61,6 +61,15 @@ git commit --amend --signoff --no-edit
 
 # Then force push (if already pushed)
 git push --force-with-lease
+
+### Automated commits from CI
+
+Commits created by GitHub Actions (for example the `github-actions[bot]` user) are signed automatically by repository workflows where configured. For example, the `sync` workflow amends merge commits with a `Signed-off-by` trailer so the DCO check passes.
+
+If you need to exclude or annotate automated commits for any reason:
+- Use `[skip ci]` in the commit message to avoid CI runs when appropriate.
+- Prefer adding a `Signed-off-by` trailer in the workflow (recommended) instead of disabling DCO checks.
+- Some organizations use a custom DCO exemption process; contact maintainers if you need an exception.
 ```
 
 ### Development Setup

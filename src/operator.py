@@ -92,9 +92,11 @@ class Operator:
                 f"Secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}' is missing required fields: {', '.join(missing_fields)}")
         if os.environ.get('ENFORCE_ENDPOINT_CHECK', 'true').lower() == 'true':
             if endpoint_url and endpoint_url != self.backend.endpoint_url:
-                ERRORS_TOTAL.inc()
-                raise Exception(
-                    f"Endpoint URL {endpoint_url} in secret '{secret.metadata.name}' does not match operator configuration {self.backend.endpoint_url}.")
+                # Skip processing secrets whose endpoint doesn't match operator config.
+                # This is not treated as an operator error; just log and return.
+                logger.warning(
+                    f"Skipping secret '{secret.metadata.name}' in ns '{secret.metadata.namespace}': endpoint URL {endpoint_url} does not match operator configuration {self.backend.endpoint_url}.")
+                return
 
         logger.info(
             f"Processing bucket '{bucket_name}' and user '{access_key}'.")
