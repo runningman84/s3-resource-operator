@@ -1,9 +1,9 @@
 # Pin urllib3 to satisfy kubernetes dependency requirements
 # kubernetes 34.1.0 requires: urllib3<2.4.0,>=1.24.2
-urllib3<2.4.0,>=1.24.2
+urllib3<2.7.0,>=2.6.3
 kubernetes==34.1.0
-boto3==1.40.64
-botocore==1.40.64
+boto3==1.42.25
+botocore==1.42.26
 requests==2.32.5
-prometheus-client==0.23.1
+prometheus-client==0.24.0
 python-dotenv==1.2.1
