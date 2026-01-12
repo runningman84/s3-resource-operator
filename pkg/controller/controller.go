@@ -20,11 +20,11 @@ const (
 
 // Controller watches Kubernetes secrets and manages S3 resources
 type Controller struct {
-	clientset         *kubernetes.Clientset
-	backend           backends.Backend
-	annotationKey     string
-	enforceEndpoint   bool
-	processedSecrets  map[string]string // namespace/name -> resourceVersion
+	clientset        *kubernetes.Clientset
+	backend          backends.Backend
+	annotationKey    string
+	enforceEndpoint  bool
+	processedSecrets map[string]string // namespace/name -> resourceVersion
 }
 
 // NewController creates a new controller instance

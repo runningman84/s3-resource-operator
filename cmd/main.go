@@ -21,13 +21,13 @@ import (
 )
 
 var (
-	kubeconfig     = flag.String("kubeconfig", "", "Path to kubeconfig file (for out-of-cluster usage)")
-	metricsPort    = flag.Int("metrics-port", 8000, "Port for metrics and health endpoints")
-	annotationKey  = flag.String("annotation-key", "s3-resource-operator.io/enabled", "Annotation key to filter secrets")
-	s3EndpointURL  = flag.String("s3-endpoint-url", "", "S3 endpoint URL")
-	rootAccessKey  = flag.String("root-access-key", "", "Root access key for S3 backend")
-	rootSecretKey  = flag.String("root-secret-key", "", "Root secret key for S3 backend")
-	backendName    = flag.String("backend-name", "versitygw", "Backend type (versitygw, minio, garage)")
+	kubeconfig      = flag.String("kubeconfig", "", "Path to kubeconfig file (for out-of-cluster usage)")
+	metricsPort     = flag.Int("metrics-port", 8000, "Port for metrics and health endpoints")
+	annotationKey   = flag.String("annotation-key", "s3-resource-operator.io/enabled", "Annotation key to filter secrets")
+	s3EndpointURL   = flag.String("s3-endpoint-url", "", "S3 endpoint URL")
+	rootAccessKey   = flag.String("root-access-key", "", "Root access key for S3 backend")
+	rootSecretKey   = flag.String("root-secret-key", "", "Root secret key for S3 backend")
+	backendName     = flag.String("backend-name", "versitygw", "Backend type (versitygw, minio, garage)")
 	enforceEndpoint = flag.Bool("enforce-endpoint-check", true, "Skip secrets with mismatched endpoint URLs")
 )
 

@@ -14,8 +14,20 @@ repos:
     rev: v0.5.1
     hooks:
       - id: go-fmt
-      - id: go-vet
+        args: ['-s']  # Apply simplifications
+        files: ^(cmd|pkg)/.*\.go$
       - id: go-mod-tidy
+        pass_filenames: false
+        always_run: true
+
+  - repo: local
+    hooks:
+      - id: go-vet
+        name: go-vet
+        entry: bash -c 'go vet ./cmd/... ./pkg/...'
+        language: system
+        pass_filenames: false
+        always_run: true
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.6.0
