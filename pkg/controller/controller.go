@@ -20,7 +20,7 @@ const (
 
 // Controller watches Kubernetes secrets and manages S3 resources
 type Controller struct {
-	clientset        *kubernetes.Clientset
+	clientset        kubernetes.Interface
 	backend          backends.Backend
 	annotationKey    string
 	enforceEndpoint  bool
@@ -29,7 +29,7 @@ type Controller struct {
 
 // NewController creates a new controller instance
 func NewController(
-	clientset *kubernetes.Clientset,
+	clientset kubernetes.Interface,
 	backend backends.Backend,
 	annotationKey string,
 	enforceEndpoint bool,
