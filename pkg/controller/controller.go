@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	defaultResyncPeriod = 5 * time.Minute
+	defaultResyncPeriod = 60 * time.Minute
 )
 
 // Controller watches Kubernetes secrets and manages S3 resources
 type Controller struct {
-	clientset        *kubernetes.Clientset
+	clientset        kubernetes.Interface
 	backend          backends.Backend
 	annotationKey    string
 	enforceEndpoint  bool
@@ -29,7 +29,7 @@ type Controller struct {
 
 // NewController creates a new controller instance
 func NewController(
-	clientset *kubernetes.Clientset,
+	clientset kubernetes.Interface,
 	backend backends.Backend,
 	annotationKey string,
 	enforceEndpoint bool,
@@ -50,8 +50,29 @@ func (c *Controller) Run(ctx context.Context) error {
 		return fmt.Errorf("initial sync failed: %w", err)
 	}
 
+	// Start periodic resync in background
+	go c.periodicResync(ctx)
+
 	klog.Info("Starting watch loop...")
 	return c.watchSecrets(ctx)
+}
+
+func (c *Controller) periodicResync(ctx context.Context) {
+	ticker := time.NewTicker(defaultResyncPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			klog.Info("Periodic resync stopped")
+			return
+		case <-ticker.C:
+			klog.Info("Running periodic resync...")
+			if err := c.sync(ctx); err != nil {
+				klog.Errorf("Periodic resync failed: %v", err)
+			}
+		}
+	}
 }
 
 func (c *Controller) sync(ctx context.Context) error {
@@ -84,23 +105,19 @@ func (c *Controller) watchSecrets(ctx context.Context) error {
 		default:
 		}
 
-		watcher, err := c.clientset.CoreV1().Secrets(corev1.NamespaceAll).Watch(ctx, metav1.ListOptions{
-			TimeoutSeconds: func() *int64 { i := int64(300); return &i }(),
-		})
+		watcher, err := c.clientset.CoreV1().Secrets(corev1.NamespaceAll).Watch(ctx, metav1.ListOptions{})
 		if err != nil {
 			klog.Errorf("Failed to start watch: %v", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
+		klog.Info("Watch started successfully")
 		c.processWatchEvents(ctx, watcher)
 		watcher.Stop()
 
-		// Periodic resync
-		time.Sleep(defaultResyncPeriod)
-		if err := c.sync(ctx); err != nil {
-			klog.Errorf("Resync failed: %v", err)
-		}
+		// Watch closed unexpectedly, restart immediately
+		klog.Warning("Watch connection closed, restarting...")
 	}
 }
 

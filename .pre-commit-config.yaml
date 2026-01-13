@@ -29,6 +29,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: go-test
+        name: go-test
+        entry: bash -c 'go test -v ./...'
+        language: system
+        pass_filenames: false
+        always_run: true
+
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.6.0
     hooks:

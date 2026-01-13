@@ -70,4 +70,5 @@ jobs:
       packages: write
 
   sync:
+    needs: release
     uses: ./.github/workflows/sync.yml
