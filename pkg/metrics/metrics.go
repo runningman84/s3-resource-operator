@@ -19,12 +19,6 @@ var (
 		Help: "Total number of errors encountered",
 	})
 
-	syncDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "s3_operator_sync_duration_seconds",
-		Help:    "Duration of a sync cycle",
-		Buckets: prometheus.DefBuckets,
-	})
-
 	handleSecretDuration = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name:    "s3_operator_handle_secret_duration_seconds",
 		Help:    "Duration of handling a secret",
@@ -86,11 +80,6 @@ func IncrementSecretsProcessed() {
 // IncrementErrors increments the errors counter
 func IncrementErrors() {
 	errorsTotal.Inc()
-}
-
-// RecordSyncDuration records the duration of a sync cycle
-func RecordSyncDuration(timer Timer) {
-	syncDuration.Observe(timer.Duration().Seconds())
 }
 
 // RecordHandleSecretDuration records the duration of handling a secret

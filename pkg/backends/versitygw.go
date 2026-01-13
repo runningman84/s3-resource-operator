@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"k8s.io/klog/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // VersityGW implements the Backend interface for VersityGW
@@ -55,21 +55,22 @@ func (v *VersityGW) GetEndpointURL() string {
 }
 
 func (v *VersityGW) TestConnection(ctx context.Context) error {
-	klog.Infof("Testing connection to VersityGW: %s", v.endpointURL)
+	log := ctrl.Log.WithName("versitygw")
+	log.Info("Testing connection", "endpoint", v.endpointURL)
 
 	// Test listing buckets
 	buckets, err := v.listBucketsRaw(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list buckets: %w", err)
 	}
-	klog.Infof("Successfully listed %d bucket(s)", len(buckets))
+	log.Info("Successfully listed buckets", "count", len(buckets))
 
 	// Test listing users
 	users, err := v.listUsersRaw(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list users: %w", err)
 	}
-	klog.Infof("Successfully listed %d user(s)", len(users))
+	log.Info("Successfully listed users", "count", len(users))
 
 	return nil
 }
@@ -80,7 +81,7 @@ func (v *VersityGW) CreateBucket(ctx context.Context, bucketName string, owner *
 		return err
 	}
 	if exists {
-		klog.Infof("Bucket %s already exists", bucketName)
+		ctrl.Log.WithName("versitygw").Info("Bucket already exists", "bucket", bucketName)
 		return nil
 	}
 
@@ -91,7 +92,7 @@ func (v *VersityGW) CreateBucket(ctx context.Context, bucketName string, owner *
 		return fmt.Errorf("failed to create bucket: %w", err)
 	}
 
-	klog.Infof("Created bucket: %s", bucketName)
+	ctrl.Log.WithName("versitygw").Info("Created bucket", "bucket", bucketName)
 
 	if owner != nil {
 		return v.ChangeBucketOwner(ctx, bucketName, *owner)
@@ -108,7 +109,7 @@ func (v *VersityGW) DeleteBucket(ctx context.Context, bucketName string) error {
 		return fmt.Errorf("failed to delete bucket: %w", err)
 	}
 
-	klog.Infof("Deleted bucket: %s", bucketName)
+	ctrl.Log.WithName("versitygw").Info("Deleted bucket", "bucket", bucketName)
 	return nil
 }
 
@@ -185,17 +186,18 @@ func (v *VersityGW) ChangeBucketOwner(ctx context.Context, bucketName, newOwner 
 		return fmt.Errorf("failed to change bucket owner: status %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	klog.Infof("Changed owner of bucket %s to %s", bucketName, newOwner)
+	ctrl.Log.WithName("versitygw").Info("Changed bucket owner", "bucket", bucketName, "newOwner", newOwner)
 	return nil
 }
 
 func (v *VersityGW) CreateUser(ctx context.Context, accessKey, secretKey string, role *string, userID, groupID *int) error {
+	log := ctrl.Log.WithName("versitygw")
 	exists, err := v.UserExists(ctx, accessKey)
 	if err != nil {
 		return err
 	}
 	if exists {
-		klog.Infof("User %s already exists", accessKey)
+		log.Info("User already exists", "user", accessKey)
 		return nil
 	}
 
@@ -238,7 +240,7 @@ func (v *VersityGW) CreateUser(ctx context.Context, accessKey, secretKey string,
 		return fmt.Errorf("failed to create user: status %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	klog.Infof("Created user: %s", accessKey)
+	ctrl.Log.WithName("versitygw").Info("Created user", "user", accessKey)
 	return nil
 }
 
@@ -265,7 +267,7 @@ func (v *VersityGW) DeleteUser(ctx context.Context, accessKey string) error {
 		return fmt.Errorf("failed to delete user: status %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	klog.Infof("Deleted user: %s", accessKey)
+	ctrl.Log.WithName("versitygw").Info("Deleted user", "user", accessKey)
 	return nil
 }
 
@@ -307,7 +309,7 @@ func (v *VersityGW) UpdateUser(ctx context.Context, accessKey string, secretKey 
 		return fmt.Errorf("failed to update user: status %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	klog.Infof("Updated user: %s", accessKey)
+	ctrl.Log.WithName("versitygw").Info("Updated user", "user", accessKey)
 	return nil
 }
 

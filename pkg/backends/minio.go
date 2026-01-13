@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // MinIO implements the Backend interface for MinIO
@@ -40,8 +41,16 @@ func (m *MinIO) GetEndpointURL() string {
 }
 
 func (m *MinIO) TestConnection(ctx context.Context) error {
-	_, err := m.s3Client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
-	return err
+	log := ctrl.Log.WithName("minio")
+	log.Info("Testing connection", "endpoint", m.endpointURL)
+
+	result, err := m.s3Client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
+	if err != nil {
+		return fmt.Errorf("failed to list buckets: %w", err)
+	}
+	log.Info("Successfully listed buckets", "count", len(result.Buckets))
+
+	return nil
 }
 
 func (m *MinIO) CreateBucket(ctx context.Context, bucketName string, owner *string) error {
