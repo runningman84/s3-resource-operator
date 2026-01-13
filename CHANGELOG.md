@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/runningman84/s3-resource-operator/compare/v1.12.0...v1.13.0) (2026-01-13)
+
+
+### Features
+
+* move to controller runtime ([d9d0e9b](https://github.com/runningman84/s3-resource-operator/commit/d9d0e9b4b81e3b946d68ad88ab3d13b59f7b9131))
+
 # [1.12.0](https://github.com/runningman84/s3-resource-operator/compare/v1.11.0...v1.12.0) (2026-01-13)
 
 
