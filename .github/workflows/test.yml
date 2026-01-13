@@ -26,6 +26,11 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Verify go.mod and go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
       - name: Run go fmt
         run: |
           if [ -n "$(gofmt -s -l .)" ]; then

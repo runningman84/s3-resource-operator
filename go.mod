@@ -55,9 +55,7 @@ require (
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
-	gopkg.in/evanphx/json-patch.v5 v5.9.11 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20251125145642-4e65d59e963e // indirect
 	k8s.io/utils v0.0.0-20260108192941-914a6e750570 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
