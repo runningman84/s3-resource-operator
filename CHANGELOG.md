@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/runningman84/s3-resource-operator/compare/v1.11.0...v1.12.0) (2026-01-13)
+
+
+### Features
+
+* watch forever and run period resync ([b3a1a8a](https://github.com/runningman84/s3-resource-operator/commit/b3a1a8a3b06609402d4ab18e1535989d7d33f0d6))
+
 # [1.11.0](https://github.com/runningman84/s3-resource-operator/compare/v1.10.0...v1.11.0) (2026-01-12)
 
 
