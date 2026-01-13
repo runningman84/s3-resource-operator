@@ -26,6 +26,11 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Verify go.mod and go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
       - name: Run go fmt
         run: |
           if [ -n "$(gofmt -s -l .)" ]; then
@@ -77,6 +82,19 @@ jobs:
           push: false
           load: true
           tags: local/s3-resource-operator:latest
+
+      - name: Inspect Docker image
+        run: |
+          echo "### Docker Image Information ###"
+          echo ""
+          echo "Image ID and Size:"
+          docker images local/s3-resource-operator:latest --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.Size}}"
+          echo ""
+          echo "Image History (Layers):"
+          docker history local/s3-resource-operator:latest --human --no-trunc
+          echo ""
+          echo "Layer Count:"
+          docker history local/s3-resource-operator:latest --quiet | wc -l
 
       - name: Scan image
         uses: aquasecurity/trivy-action@master

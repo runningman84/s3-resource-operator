@@ -71,8 +71,9 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 operator:
-  # -- Log level for the operator (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-  logLevel: "INFO"
+  # -- Additional command-line arguments for the operator
+  # Example: ["--zap-log-level=debug", "--zap-development=true"]
+  args: []
   # Annotation key for secrets to be processed by the operator
   # -- The annotation key to look for on secrets.
   annotation_key: "s3-resource-operator.io/enabled"
@@ -100,13 +101,13 @@ operator:
 metrics:
   service:
     enabled: true
-    port: 8000
+    port: 8080
     # Annotations for legacy Prometheus scraping (without Prometheus Operator)
     # These are not needed if you're using ServiceMonitor (serviceMonitor.enabled=true)
     annotations: {}
     # prometheus.io/scrape: "true"
     # prometheus.io/path: "/metrics"
-    # prometheus.io/port: "8000"
+    # prometheus.io/port: "8080"
 # ServiceMonitor configuration for Prometheus Operator
 serviceMonitor:
   # -- Enable ServiceMonitor for Prometheus Operator

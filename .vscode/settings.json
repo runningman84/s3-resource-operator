@@ -15,5 +15,8 @@
     "python.formatting.provider": "black",
     "editor.formatOnSave": true,
     "files.trimTrailingWhitespace": true,
-    "files.insertFinalNewline": true
+    "files.insertFinalNewline": true,
+    "chat.tools.terminal.autoApprove": {
+        "go": true
+    }
 }

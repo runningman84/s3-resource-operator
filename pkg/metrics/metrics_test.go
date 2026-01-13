@@ -30,7 +30,6 @@ func TestMetricsDuration(t *testing.T) {
 	timer := StartTimer()
 	time.Sleep(5 * time.Millisecond)
 
-	// These should not panic
-	RecordSyncDuration(timer)
+	// This should not panic
 	RecordHandleSecretDuration(timer)
 }

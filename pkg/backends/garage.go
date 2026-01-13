@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // Garage implements the Backend interface for Garage
@@ -40,8 +41,16 @@ func (g *Garage) GetEndpointURL() string {
 }
 
 func (g *Garage) TestConnection(ctx context.Context) error {
-	_, err := g.s3Client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
-	return err
+	log := ctrl.Log.WithName("garage")
+	log.Info("Testing connection", "endpoint", g.endpointURL)
+
+	result, err := g.s3Client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
+	if err != nil {
+		return fmt.Errorf("failed to list buckets: %w", err)
+	}
+	log.Info("Successfully listed buckets", "count", len(result.Buckets))
+
+	return nil
 }
 
 func (g *Garage) CreateBucket(ctx context.Context, bucketName string, owner *string) error {

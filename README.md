@@ -18,14 +18,16 @@ This allows for a GitOps-friendly, declarative approach to managing basic S3 res
 
 ## Features
 
+- **Controller-Runtime Architecture**: Built on Kubernetes controller-runtime framework for robust, production-ready operator patterns.
 - **Automated S3 Resource Provisioning**: Automatically creates S3 buckets and IAM users based on Kubernetes secrets.
 - **Backend Support**: Supports multiple S3 backends, including `versitygw`, `minio`, and `garage`.
 - **Bucket Ownership Management**: Ensures existing buckets are owned by the correct user, and changes the owner if necessary.
 - **Dynamic Reconfiguration**: Watches for changes to secrets and updates resources accordingly.
-- **Initial Sync**: On startup, the operator performs a full sync to ensure all declared resources are correctly configured.
 - **Graceful Shutdown**: Properly handles SIGTERM and SIGINT signals for clean shutdown in Kubernetes environments.
-- **Prometheus Metrics**: Exposes comprehensive metrics on port 8000 for monitoring (secrets processed, errors, sync duration, resource operations).
-- **Configurable**: All settings, including S3 endpoint, credentials, and log level, are configurable via environment variables.
+- **Comprehensive Metrics**: Exposes both custom operator metrics and controller-runtime metrics (reconciliation stats, work queue metrics) on port 8080.
+- **Health Endpoints**: Separate health check endpoints (`/healthz`, `/readyz`) on port 8081 for Kubernetes probes.
+- **Structured Logging**: Uses controller-runtime's structured logging (zap) for better observability and log filtering.
+- **Configurable**: All settings, including S3 endpoint, credentials, and log level, are configurable via environment variables and command-line flags.
 - **Helm Chart**: Comes with a Helm chart for easy deployment via OCI registry.
 - **Multi-Architecture Support**: Docker images built for both AMD64 and ARM64 architectures (including Apple Silicon, AWS Graviton).
 - **Automated Releases**: Semantic versioning and automated releases using Conventional Commits.
@@ -100,9 +102,15 @@ helm install s3-resource-operator ./helm \
 You can customize the operator behavior using Helm values:
 
 ```sh
-# Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# Set log level (info, debug, error)
+# The operator uses structured logging via controller-runtime/zap
 helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
-      --set operator.logLevel="DEBUG" \
+      --set operator.args[0]="--zap-log-level=debug" \
+      ...
+
+# Enable development mode for more verbose logging
+helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-operator \
+      --set operator.args[0]="--zap-development=true" \
       ...
 
 # Use a different S3 backend
@@ -115,6 +123,13 @@ helm install s3-resource-operator oci://ghcr.io/runningman84/charts/s3-resource-
       --set operator.annotation_key="my-custom-annotation/enabled" \
       ...
 ```
+
+**Available logging flags:**
+- `--zap-log-level`: Set the log level (debug, info, error) - default: info
+- `--zap-development`: Enable development mode for more verbose output
+- `--zap-encoder`: Set the log encoding (json or console) - default: json
+- `--zap-stacktrace-level`: Set the level at which to record stack traces
+- `--kubeconfig`: Path to kubeconfig file (auto-detected if not specified)
 
 ## Usage
 
@@ -269,7 +284,6 @@ pkg/
 - Metrics exposed:
   - `s3_operator_secrets_processed_total`
   - `s3_operator_errors_total`
-  - `s3_operator_sync_duration_seconds`
   - `s3_operator_handle_secret_duration_seconds`
   - `s3_operator_users_created_total`
   - `s3_operator_users_deleted_total`
@@ -552,24 +566,30 @@ INFO - Backend connection test passed.
 
 ## Monitoring
 
-The operator exposes Prometheus metrics and a health check endpoint on port 8000:
+The operator exposes Prometheus metrics on port 8000 and health check endpoints on port 8001:
 
 ### Health Check
-- **Endpoint**: `/healthz`
+- **Endpoints**:
+  - `/healthz` - Liveness probe
+  - `/readyz` - Readiness probe
+- **Port**: 8081
 - **Purpose**: Kubernetes liveness and readiness probes
-- **Response**: `{"status":"healthy"}`
+- **Response**: HTTP 200 OK if healthy
 
 ```sh
-kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 8000:8000
-curl http://localhost:8000/healthz
+kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 8081:8081
+curl http://localhost:8081/healthz
+curl http://localhost:8081/readyz
 ```
 
 ### Metrics
 - **Endpoint**: `/metrics`
+- **Port**: 8080
 - **Available Metrics**:
+
+  **Custom S3 Operator Metrics:**
   - `s3_operator_secrets_processed_total`: Total number of secrets processed
   - `s3_operator_errors_total`: Total number of errors encountered
-  - `s3_operator_sync_duration_seconds`: Duration of sync cycles (histogram)
   - `s3_operator_handle_secret_duration_seconds`: Duration of handling individual secrets (histogram)
   - `s3_operator_users_created_total`: Total number of IAM users created
   - `s3_operator_users_deleted_total`: Total number of IAM users deleted
@@ -577,10 +597,18 @@ curl http://localhost:8000/healthz
   - `s3_operator_buckets_created_total`: Total number of S3 buckets created
   - `s3_operator_bucket_owners_changed_total`: Total number of bucket owners changed
 
+  **Controller-Runtime Metrics:**
+  - `controller_runtime_reconcile_total`: Total number of reconciliations per controller
+  - `controller_runtime_reconcile_errors_total`: Total number of reconciliation errors per controller
+  - `controller_runtime_reconcile_time_seconds`: Length of time per reconciliation per controller (histogram)
+  - `controller_runtime_max_concurrent_reconciles`: Maximum number of concurrent reconciles per controller
+  - `workqueue_*`: Work queue metrics (depth, adds, latency, retries, etc.)
+  - Standard Go runtime metrics (memory, goroutines, GC stats)
+
 To access metrics:
 ```sh
-kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 8000:8000
-curl http://localhost:8000/metrics
+kubectl port-forward -n s3-resource-operator deployment/s3-resource-operator 8080:8080
+curl http://localhost:8080/metrics
 ```
 
 ### Prometheus Operator

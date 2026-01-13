@@ -3,184 +3,103 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/runningman84/s3-resource-operator/pkg/backends"
 	"github.com/runningman84/s3-resource-operator/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-const (
-	defaultResyncPeriod = 60 * time.Minute
-)
-
-// Controller watches Kubernetes secrets and manages S3 resources
-type Controller struct {
-	clientset        kubernetes.Interface
-	backend          backends.Backend
-	annotationKey    string
-	enforceEndpoint  bool
-	processedSecrets map[string]string // namespace/name -> resourceVersion
+// SecretReconciler reconciles Secrets with S3 backend
+type SecretReconciler struct {
+	client.Client
+	Scheme          *runtime.Scheme
+	Backend         backends.Backend
+	AnnotationKey   string
+	EnforceEndpoint bool
 }
 
-// NewController creates a new controller instance
-func NewController(
-	clientset kubernetes.Interface,
+// NewSecretReconciler creates a new reconciler instance
+func NewSecretReconciler(
+	client client.Client,
+	scheme *runtime.Scheme,
 	backend backends.Backend,
 	annotationKey string,
 	enforceEndpoint bool,
-) *Controller {
-	return &Controller{
-		clientset:        clientset,
-		backend:          backend,
-		annotationKey:    annotationKey,
-		enforceEndpoint:  enforceEndpoint,
-		processedSecrets: make(map[string]string),
+) *SecretReconciler {
+	return &SecretReconciler{
+		Client:          client,
+		Scheme:          scheme,
+		Backend:         backend,
+		AnnotationKey:   annotationKey,
+		EnforceEndpoint: enforceEndpoint,
 	}
 }
 
-// Run starts the controller
-func (c *Controller) Run(ctx context.Context) error {
-	klog.Info("Performing initial sync...")
-	if err := c.sync(ctx); err != nil {
-		return fmt.Errorf("initial sync failed: %w", err)
+// Reconcile handles Secret events
+func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	// Fetch the Secret
+	var secret corev1.Secret
+	if err := r.Get(ctx, req.NamespacedName, &secret); err != nil {
+		// Secret was deleted or doesn't exist
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Start periodic resync in background
-	go c.periodicResync(ctx)
+	// Skip if not annotated
+	if !r.isAnnotated(&secret) {
+		return ctrl.Result{}, nil
+	}
 
-	klog.Info("Starting watch loop...")
-	return c.watchSecrets(ctx)
+	logger.Info("Reconciling secret", "namespace", secret.Namespace, "name", secret.Name)
+
+	if err := r.handleSecret(ctx, &secret); err != nil {
+		logger.Error(err, "Failed to handle secret")
+		metrics.IncrementErrors()
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
-func (c *Controller) periodicResync(ctx context.Context) {
-	ticker := time.NewTicker(defaultResyncPeriod)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			klog.Info("Periodic resync stopped")
-			return
-		case <-ticker.C:
-			klog.Info("Running periodic resync...")
-			if err := c.sync(ctx); err != nil {
-				klog.Errorf("Periodic resync failed: %v", err)
-			}
+// SetupWithManager sets up the controller with the Manager
+func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Only watch secrets with our annotation
+	pred := predicate.NewPredicateFuncs(func(obj client.Object) bool {
+		secret, ok := obj.(*corev1.Secret)
+		if !ok {
+			return false
 		}
-	}
+		return r.isAnnotated(secret)
+	})
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.Secret{}).
+		WithEventFilter(pred).
+		Complete(r)
 }
 
-func (c *Controller) sync(ctx context.Context) error {
-	timer := metrics.StartTimer()
-	defer metrics.RecordSyncDuration(timer)
-
-	secrets, err := c.findAnnotatedSecrets(ctx)
-	if err != nil {
-		return err
-	}
-
-	klog.Infof("Found %d annotated secret(s)", len(secrets))
-
-	for _, secret := range secrets {
-		if err := c.handleSecret(ctx, &secret); err != nil {
-			klog.Errorf("Error handling secret %s/%s: %v", secret.Namespace, secret.Name, err)
-			metrics.IncrementErrors()
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) watchSecrets(ctx context.Context) error {
-	for {
-		select {
-		case <-ctx.Done():
-			klog.Info("Watch loop stopped")
-			return nil
-		default:
-		}
-
-		watcher, err := c.clientset.CoreV1().Secrets(corev1.NamespaceAll).Watch(ctx, metav1.ListOptions{})
-		if err != nil {
-			klog.Errorf("Failed to start watch: %v", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		klog.Info("Watch started successfully")
-		c.processWatchEvents(ctx, watcher)
-		watcher.Stop()
-
-		// Watch closed unexpectedly, restart immediately
-		klog.Warning("Watch connection closed, restarting...")
-	}
-}
-
-func (c *Controller) processWatchEvents(ctx context.Context, watcher watch.Interface) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case event, ok := <-watcher.ResultChan():
-			if !ok {
-				klog.Info("Watch channel closed, will restart")
-				return
-			}
-
-			secret, ok := event.Object.(*corev1.Secret)
-			if !ok {
-				continue
-			}
-
-			if !c.isAnnotated(secret) {
-				continue
-			}
-
-			key := fmt.Sprintf("%s/%s", secret.Namespace, secret.Name)
-
-			switch event.Type {
-			case watch.Added, watch.Modified:
-				// Skip if we've already processed this version
-				if c.processedSecrets[key] == secret.ResourceVersion {
-					continue
-				}
-
-				klog.Infof("Processing secret %s (event: %s)", key, event.Type)
-				if err := c.handleSecret(ctx, secret); err != nil {
-					klog.Errorf("Error handling secret %s: %v", key, err)
-					metrics.IncrementErrors()
-				} else {
-					c.processedSecrets[key] = secret.ResourceVersion
-				}
-
-			case watch.Deleted:
-				klog.Infof("Secret %s deleted", key)
-				delete(c.processedSecrets, key)
-			}
-		}
-	}
-}
-
-func (c *Controller) handleSecret(ctx context.Context, secret *corev1.Secret) error {
+func (r *SecretReconciler) handleSecret(ctx context.Context, secret *corev1.Secret) error {
+	logger := log.FromContext(ctx)
 	timer := metrics.StartTimer()
 	defer metrics.RecordHandleSecretDuration(timer)
 	metrics.IncrementSecretsProcessed()
 
-	data, err := c.decodeSecretData(secret)
+	data, err := r.decodeSecretData(secret)
 	if err != nil {
 		return err
 	}
 
 	// Extract and validate required fields
-	bucketName := c.getField(data, "bucket-name", "BUCKET_NAME")
-	accessKey := c.getField(data, "access-key", "ACCESS_KEY", "ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID")
-	secretKey := c.getField(data, "secret-key", "SECRET_KEY", "SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY")
-	endpointURL := c.getField(data, "endpoint-url", "ENDPOINT_URL", "AWS_ENDPOINT_URL")
+	bucketName := r.getField(data, "bucket-name", "BUCKET_NAME")
+	accessKey := r.getField(data, "access-key", "ACCESS_KEY", "ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID")
+	secretKey := r.getField(data, "secret-key", "SECRET_KEY", "SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY")
+	endpointURL := r.getField(data, "endpoint-url", "ENDPOINT_URL", "AWS_ENDPOINT_URL")
 
 	if bucketName == "" || accessKey == "" || secretKey == "" {
 		return fmt.Errorf("secret %s/%s is missing required fields (bucket-name, access-key, secret-key)",
@@ -188,51 +107,53 @@ func (c *Controller) handleSecret(ctx context.Context, secret *corev1.Secret) er
 	}
 
 	// Check endpoint URL if enforcement is enabled
-	if c.enforceEndpoint && endpointURL != "" && endpointURL != c.backend.GetEndpointURL() {
-		klog.Warningf("Skipping secret %s/%s: endpoint URL %s does not match operator configuration %s",
-			secret.Namespace, secret.Name, endpointURL, c.backend.GetEndpointURL())
+	if r.EnforceEndpoint && endpointURL != "" && endpointURL != r.Backend.GetEndpointURL() {
+		logger.Info("Skipping secret: endpoint URL mismatch",
+			"secret", fmt.Sprintf("%s/%s", secret.Namespace, secret.Name),
+			"secretEndpoint", endpointURL,
+			"operatorEndpoint", r.Backend.GetEndpointURL())
 		return nil
 	}
 
 	// Get optional fields
-	userID := c.parseIntField(data, "user-id", "USER_ID")
-	groupID := c.parseIntField(data, "group-id", "GROUP_ID")
-	role := c.getFieldPtr(data, "role", "ROLE")
+	userID := r.parseIntField(data, "user-id", "USER_ID")
+	groupID := r.parseIntField(data, "group-id", "GROUP_ID")
+	role := r.getFieldPtr(data, "role", "ROLE")
 
 	// Create or update user
-	userExists, err := c.backend.UserExists(ctx, accessKey)
+	userExists, err := r.Backend.UserExists(ctx, accessKey)
 	if err != nil {
 		return fmt.Errorf("failed to check if user exists: %w", err)
 	}
 
 	if !userExists {
-		if err := c.backend.CreateUser(ctx, accessKey, secretKey, role, userID, groupID); err != nil {
+		if err := r.Backend.CreateUser(ctx, accessKey, secretKey, role, userID, groupID); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
 		metrics.IncrementUsersCreated()
 	} else {
-		if err := c.backend.UpdateUser(ctx, accessKey, &secretKey, userID, groupID); err != nil {
+		if err := r.Backend.UpdateUser(ctx, accessKey, &secretKey, userID, groupID); err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
 		metrics.IncrementUsersUpdated()
 	}
 
 	// Create bucket if it doesn't exist
-	bucketExists, err := c.backend.BucketExists(ctx, bucketName)
+	bucketExists, err := r.Backend.BucketExists(ctx, bucketName)
 	if err != nil {
 		return fmt.Errorf("failed to check if bucket exists: %w", err)
 	}
 
 	if !bucketExists {
-		if err := c.backend.CreateBucket(ctx, bucketName, &accessKey); err != nil {
+		if err := r.Backend.CreateBucket(ctx, bucketName, &accessKey); err != nil {
 			return fmt.Errorf("failed to create bucket: %w", err)
 		}
 		metrics.IncrementBucketsCreated()
 	} else {
 		// Check if owner needs to be changed
-		currentOwner, err := c.backend.GetBucketOwner(ctx, bucketName)
+		currentOwner, err := r.Backend.GetBucketOwner(ctx, bucketName)
 		if err == nil && currentOwner != accessKey {
-			if err := c.backend.ChangeBucketOwner(ctx, bucketName, accessKey); err != nil {
+			if err := r.Backend.ChangeBucketOwner(ctx, bucketName, accessKey); err != nil {
 				return fmt.Errorf("failed to change bucket owner: %w", err)
 			}
 			metrics.IncrementBucketOwnersChanged()
@@ -242,31 +163,15 @@ func (c *Controller) handleSecret(ctx context.Context, secret *corev1.Secret) er
 	return nil
 }
 
-func (c *Controller) findAnnotatedSecrets(ctx context.Context) ([]corev1.Secret, error) {
-	secretList, err := c.clientset.CoreV1().Secrets(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var annotated []corev1.Secret
-	for _, secret := range secretList.Items {
-		if c.isAnnotated(&secret) {
-			annotated = append(annotated, secret)
-		}
-	}
-
-	return annotated, nil
-}
-
-func (c *Controller) isAnnotated(secret *corev1.Secret) bool {
+func (r *SecretReconciler) isAnnotated(secret *corev1.Secret) bool {
 	if secret.Annotations == nil {
 		return false
 	}
-	_, exists := secret.Annotations[c.annotationKey]
+	_, exists := secret.Annotations[r.AnnotationKey]
 	return exists
 }
 
-func (c *Controller) decodeSecretData(secret *corev1.Secret) (map[string]string, error) {
+func (r *SecretReconciler) decodeSecretData(secret *corev1.Secret) (map[string]string, error) {
 	decoded := make(map[string]string)
 	for key, value := range secret.Data {
 		decoded[key] = string(value)
@@ -280,7 +185,7 @@ func (c *Controller) decodeSecretData(secret *corev1.Secret) (map[string]string,
 	return decoded, nil
 }
 
-func (c *Controller) getField(data map[string]string, keys ...string) string {
+func (r *SecretReconciler) getField(data map[string]string, keys ...string) string {
 	for _, key := range keys {
 		if val, ok := data[key]; ok && val != "" {
 			return val
@@ -289,16 +194,16 @@ func (c *Controller) getField(data map[string]string, keys ...string) string {
 	return ""
 }
 
-func (c *Controller) getFieldPtr(data map[string]string, keys ...string) *string {
-	val := c.getField(data, keys...)
+func (r *SecretReconciler) getFieldPtr(data map[string]string, keys ...string) *string {
+	val := r.getField(data, keys...)
 	if val == "" {
 		return nil
 	}
 	return &val
 }
 
-func (c *Controller) parseIntField(data map[string]string, keys ...string) *int {
-	val := c.getField(data, keys...)
+func (r *SecretReconciler) parseIntField(data map[string]string, keys ...string) *int {
+	val := r.getField(data, keys...)
 	if val == "" {
 		return nil
 	}
