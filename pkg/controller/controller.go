@@ -99,7 +99,7 @@ func (r *SecretReconciler) handleSecret(ctx context.Context, secret *corev1.Secr
 	bucketName := r.getField(data, "bucket-name", "BUCKET_NAME")
 	accessKey := r.getField(data, "access-key", "ACCESS_KEY", "ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID")
 	secretKey := r.getField(data, "secret-key", "SECRET_KEY", "SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY")
-	endpointURL := r.getField(data, "endpoint-url", "ENDPOINT_URL", "AWS_ENDPOINT_URL")
+	endpointURL := r.getField(data, "endpoint-url", "ENDPOINT_URL", "AWS_ENDPOINT_URL", "AWS_ENDPOINTS")
 
 	if bucketName == "" || accessKey == "" || secretKey == "" {
 		return fmt.Errorf("secret %s/%s is missing required fields (bucket-name, access-key, secret-key)",
