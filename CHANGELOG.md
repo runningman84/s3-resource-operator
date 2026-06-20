@@ -1,3 +1,11 @@
+## [1.13.1](https://github.com/runningman84/s3-resource-operator/compare/v1.13.0...v1.13.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update go dependencies ([dc2d831](https://github.com/runningman84/s3-resource-operator/commit/dc2d8318b880dd41c3be9bc8be83ab0dc0d4e04b))
+* update alpine and golang ([8ca27d8](https://github.com/runningman84/s3-resource-operator/commit/8ca27d808ab6ef02563b5c4a6c1579fb63942640))
+
 # [1.13.0](https://github.com/runningman84/s3-resource-operator/compare/v1.12.0...v1.13.0) (2026-01-13)
 
 
