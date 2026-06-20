@@ -61,6 +61,7 @@ jobs:
         with:
           version: 'v4.2.2'
 
+
       - name: Test Helm chart
         run: |
           helm template ./helm --debug \
