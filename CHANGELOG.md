@@ -1,3 +1,15 @@
+## [1.13.2](https://github.com/runningman84/s3-resource-operator/compare/v1.13.1...v1.13.2) (2026-06-20)
+
+
+### Bug Fixes
+
+* **deps:** update go dependencies ([4e6d26e](https://github.com/runningman84/s3-resource-operator/commit/4e6d26e43872c8c2749b5fb513b6d25bc3498a20))
+* **deps:** update go dependencies to v0.35.1 ([29afdd9](https://github.com/runningman84/s3-resource-operator/commit/29afdd97be0e90baf4b0ef2b5b7a73d40ccbc842))
+* **deps:** update go dependencies to v0.35.2 ([#65](https://github.com/runningman84/s3-resource-operator/issues/65)) ([864e8d4](https://github.com/runningman84/s3-resource-operator/commit/864e8d42290a7c3d8e07c91caacbda411c1e89e0))
+* **deps:** update go dependencies to v0.35.4 ([#68](https://github.com/runningman84/s3-resource-operator/issues/68)) ([1cb9d88](https://github.com/runningman84/s3-resource-operator/commit/1cb9d88a31a9e0292dd07f21a30fa0b5c13e9696))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.23.3 ([#67](https://github.com/runningman84/s3-resource-operator/issues/67)) ([6cc9ba9](https://github.com/runningman84/s3-resource-operator/commit/6cc9ba94ed42bdb301d305214cdd63d33eec4f43))
+* merge changes ([a0ff05f](https://github.com/runningman84/s3-resource-operator/commit/a0ff05f624b83a2fc3b4c455985f54da18dfc254))
+
 ## [1.13.1](https://github.com/runningman84/s3-resource-operator/compare/v1.13.0...v1.13.1) (2026-02-07)
 
 
