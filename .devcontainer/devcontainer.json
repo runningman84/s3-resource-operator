@@ -1,36 +1,34 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
-	"name": "Go",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.23-bullseye",
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	"features": {
-		"ghcr.io/devcontainers/features/kubectl-helm-minikube": {
-			"version": "latest",
-			"helm": "latest",
-			"minikube": "latest"
-		}
-		// "ghcr.io/devcontainers/features/aws-cli:1": {}
-	},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "go mod download && git config commit.template .gitmessage && git config format.signoff true",
-	// Configure tool-specific properties.
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"golang.go",
-				"vivaxy.vscode-conventional-commits"
-			]
-		}
-	},
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
-	"mounts": [
-		"source=${localEnv:HOME}/.kube/config,target=/home/vscode/.kube/config,type=bind",
-		"source=${localEnv:HOME}/.kube/config,target=${localEnv:HOME}/.kube/config,type=bind",
-		"source=${localEnv:HOME}/.ssh,target=${localEnv:HOME}/.ssh,readonly,type=bind"
-	]
+  "name": "Go",
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "image": "mcr.microsoft.com/devcontainers/go:1-1.23-bullseye",
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube": {
+      "version": "latest",
+      "helm": "latest",
+      "minikube": "latest"
+    }
+    // "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "go mod download && git config commit.template .gitmessage && git config format.signoff true",
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "extensions": ["golang.go", "vivaxy.vscode-conventional-commits"]
+    }
+  },
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+  "mounts": [
+    "source=${localEnv:HOME}/.kube/config,target=/home/vscode/.kube/config,type=bind",
+    "source=${localEnv:HOME}/.kube/config,target=${localEnv:HOME}/.kube/config,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=${localEnv:HOME}/.ssh,readonly,type=bind"
+  ]
 }
