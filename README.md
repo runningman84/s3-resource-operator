@@ -353,9 +353,9 @@ This project uses GitHub Actions for continuous integration and deployment with 
      - Any hotfixes or patches applied to main
    - Uses `[skip ci]` to prevent triggering unnecessary workflows
 
-### Multi-Architecture Images
+### Multi-Architecture Images (Distroless)
 
-Docker images are built natively for both AMD64 and ARM64 architectures without using slow QEMU emulation. This means:
+Runtime containers are built from the official **Distroless static non‑root image** (`gcr.io/distroless/static:nonroot`). The builder stage still uses `golang:1.25-alpine` to compile the binary, but the final image contains only the static binary and minimal CA certificates. Images are built natively for both AMD64 and ARM64 architectures without using QEMU emulation. This means:
 - ✅ **Fast builds** - Native compilation on each architecture (~3x faster than QEMU)
 - ✅ **Apple Silicon** - Run natively on M1/M2/M3 Macs
 - ✅ **AWS Graviton** - Optimized for ARM-based cloud instances
@@ -376,7 +376,7 @@ Each release includes comprehensive Software Bill of Materials (SBOM) and vulner
 Complete Software Bill of Materials (SBOM) generated using [Syft](https://github.com/anchore/syft):
 
 - **What it contains**: Complete runtime environment
-  - Operating system packages (Alpine Linux)
+  - Operating system packages (Distroless static) – minimal runtime containing only the binary and CA certificates
   - Go runtime and dependencies
   - System libraries
   - Everything actually deployed in production
